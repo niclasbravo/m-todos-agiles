@@ -1,0 +1,10 @@
+<section class="nada" aria-labelledby="nada-titulo">
+  <h2 id="nada-titulo">¿Y si no lo pones en ninguna parte?</h2>
+  {% if n.perdida > 0.5 %}
+  <p>Si guardas {{ n.final_fmt }} en efectivo o en una cuenta que no paga intereses durante {{ n.meses }} meses, seguirás teniendo {{ n.final_fmt }}. Pero con una inflación de {{ n.inflacion_txt }}% anual, esa plata alcanzaría para comprar lo que hoy cuesta {{ n.real_fmt }}: pierdes {{ n.perdida_fmt }} ({{ n.pct_perdida_txt }}%) de poder de compra aunque no gastes nada.</p>
+  <div class="barra" role="img" aria-label="Poder de compra de la plata guardada: {{ n.pct_real }}% de lo que tenías"><span class="a" style="width:{{ n.pct_real }}%"></span></div>
+  <p class="meta">Lo que hoy cuesta $10.000 costaría unos {{ n.canasta_fmt }} en {{ n.meses }} meses. Por eso incluso una opción muy segura que rinda cerca de la inflación es mejor que dejar la plata quieta, mientras mantengas aparte lo que necesitas para emergencias.</p>
+  {% else %}
+  <p>Con una inflación de {{ n.inflacion_txt }}% la plata guardada mantiene su poder de compra, pero tampoco crece. Una inflación de 0% es poco realista: en Chile los precios suben casi todos los años.</p>
+  {% endif %}
+</section>

@@ -1,0 +1,54 @@
+<section id="proyeccion" class="proy" aria-labelledby="proy-titulo">
+{% if proy %}
+  {% with g=proy.grafico %}
+  <h2 id="proy-titulo">Proyección preliminar: {{ proy.inst.nombre }}</h2>
+  <p class="lead" style="margin-bottom:10px">{{ proy.resumen }} {{ proy.poder_compra }}</p>
+  <p class="leyenda">
+    <span><i class="ln nom"></i>Con la rentabilidad de esta opción</span>
+    <span><i class="ln real"></i>Descontando la inflación (pesos de hoy)</span>
+    <span><i class="ln apor"></i>Lo que pones tú</span>
+    <span><i class="ln efec"></i>Si lo dejas guardado sin invertir (pesos de hoy)</span>
+  </p>
+  <div class="grafico">
+    <svg viewBox="0 0 {{ g.ancho }} {{ g.alto }}" role="img" aria-labelledby="g-titulo g-desc">
+      <title id="g-titulo">Proyección de {{ proy.inst.nombre }}</title>
+      <desc id="g-desc">{{ proy.resumen }}</desc>
+      {% for t in g.y_marcas %}
+      <line class="grid" x1="{{ g.izq }}" x2="{{ g.der }}" y1="{{ t.y }}" y2="{{ t.y }}"/>
+      <text class="eje" x="{{ g.y_etiqueta_x }}" y="{{ t.y }}" dy="4" text-anchor="end">{{ t.texto }}</text>
+      {% endfor %}
+      {% for t in g.x_marcas %}<text class="eje" x="{{ t.x }}" y="{{ g.abajo }}" dy="18" text-anchor="middle">{{ t.texto }}</text>{% endfor %}
+      <text class="eje" x="{{ g.x_titulo_x }}" y="{{ g.x_titulo_y }}" text-anchor="middle">{{ g.x_titulo }}</text>
+      <polyline class="l l-efec" points="{{ g.efectivo }}"/>
+      <polyline class="l l-apor" points="{{ g.aportado }}"/>
+      <polyline class="l l-real" points="{{ g.real }}"/>
+      <polyline class="l l-nom" points="{{ g.nominal }}"/>
+      {% for h in g.hover %}<circle class="hv" cx="{{ h.x }}" cy="{{ h.y }}" r="5"><title>{{ h.texto }}</title></circle>{% endfor %}
+      {% for e in g.etiquetas %}<text class="et et-{{ e.clase }}" x="{{ e.x }}" y="{{ e.y }}" dy="4">{{ e.texto }}</text>{% endfor %}
+    </svg>
+  </div>
+  {% endwith %}
+  {% if proy.aporte_txt %}<p class="meta"><strong>Aportes mensuales y depósitos a plazo.</strong> {{ proy.aporte_txt }}</p>{% endif %}
+  {% if proy.bono_txt %}<p class="meta">{{ proy.bono_txt }}</p>{% endif %}
+  <p class="meta">Cómo se calcula: {{ proy.formula }}. Es interés compuesto: cada mes se gana sobre lo ya ganado.</p>
+
+  <form class="ajuste" method="get" action="#proyeccion">
+    {% for k, v in ocultos.items %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
+    <p>{{ ajuste.inflacion.label_tag }}{{ ajuste.inflacion }}{{ ajuste.inflacion.errors }}</p>
+    <p>{{ ajuste.meses.label_tag }}{{ ajuste.meses }}{{ ajuste.meses.errors }}</p>
+    <p>{{ ajuste.aporte.label_tag }}{{ ajuste.aporte }}{{ ajuste.aporte.errors }}</p>
+    <p><button type="submit">Actualizar gráfico</button></p>
+  </form>
+  <details>
+    <summary>Ver los datos del gráfico</summary>
+    <table class="tabla">
+      <thead><tr><th scope="col">Plazo</th><th scope="col">Lo que pones tú</th><th scope="col">Con la rentabilidad</th><th scope="col">Descontando inflación</th><th scope="col">Guardado sin invertir</th></tr></thead>
+      <tbody>{% for f in proy.tabla %}<tr><th scope="row">{{ f.periodo }}</th><td>{{ f.aportado }}</td><td>{{ f.nominal }}</td><td>{{ f.real }}</td><td>{{ f.efectivo }}</td></tr>{% endfor %}</tbody>
+    </table>
+  </details>
+  <p class="meta">Proyección preliminar con el monto que indicaste{% if proy.aporte %} y los aportes mensuales que agregaste, que se suponen al final de cada mes{% else %}. Puedes sumar un aporte mensual en el formulario de arriba{% endif %}. La rentabilidad se mantiene constante, algo que en la realidad no ocurre, sobre todo en fondos.</p>
+{% else %}
+  <h2 id="proy-titulo">Proyección</h2>
+  <p class="meta">Elige «Ver proyección de esta opción» en una de las recomendaciones para ver cómo podría crecer tu dinero, con la inflación descontada.</p>
+{% endif %}
+</section>

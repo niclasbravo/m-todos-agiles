@@ -1,0 +1,68 @@
+{% extends "comparador/base.html" %}
+{% block contenido %}
+  <h1>¿Dónde conviene partir a ahorrar?</h1>
+  <p class="lead">Compara cuánto tendrías con cada opción disponible en Chile. Ingresa cuánto tienes, cuánto puedes aportar al mes y por cuánto tiempo.</p>
+  <p class="lead">¿No sabes por dónde partir? <a href="{% url 'quiz' %}">Responde el quiz</a> y te mostramos hasta 3 opciones para empezar.</p>
+  <p class="lead" id="perfil-guardado" hidden></p>
+  <div class="grid">
+    <form method="get">
+      {{ form.non_field_errors }}
+      <p>{{ form.inicial.label_tag }}{{ form.inicial }}{{ form.inicial.errors }}</p>
+      <p>{{ form.aporte.label_tag }}{{ form.aporte }}{{ form.aporte.errors }}</p>
+      <div class="row">
+        <p>{{ form.plazo.label_tag }}{{ form.plazo }}</p>
+        <p>{{ form.unidad.label_tag }}{{ form.unidad }}</p>
+      </div>
+      {{ form.plazo.errors }}
+      <p>{{ form.inflacion.label_tag }}{{ form.inflacion }}{{ form.inflacion.errors }}</p>
+      <button type="submit">Simular</button>
+    </form>
+
+    <section>
+    {% if filas %}
+      {% include "comparador/_sin_invertir.html" with n=nada %}
+      <h2>Aportando {{ filas.0.aportado_fmt }} en {{ d.meses }} meses, podrías tener:</h2>
+      <p class="leyenda">
+        <span><i class="sw" style="background:var(--azul)"></i>Lo que pones tú</span>
+        <span><i class="sw" style="background:var(--gana)"></i>Ganancia</span>
+        <span><i class="sw" style="background:var(--real)"></i>Valor real, en pesos de hoy</span>
+      </p>
+      {% for f in filas %}
+      <article class="fila{% if f.nombre in destacar %} destacada{% endif %}">
+        <header><h3>{{ f.nombre }}</h3><span class="tag">{% if f.nombre in destacar %}Recomendada para ti. {% endif %}Riesgo {{ f.riesgo_txt }}</span></header>
+        <div class="barra" role="img" aria-label="{{ f.nombre }}: {{ f.final_fmt }}, valor real {{ f.real_fmt }}">
+          <span class="a" style="width:{{ f.pct_aportado }}%"></span><span class="g" style="width:{{ f.pct_ganancia }}%"></span><i style="left:{{ f.pct_real }}%"></i>
+        </div>
+        <div class="nums"><strong>{{ f.final_fmt }}</strong><span>Ganancia {{ f.ganancia_fmt }}</span><span>Valor real {{ f.real_fmt }}</span></div>
+        <p class="meta">Rentabilidad referencial: {{ f.tasa_txt }}% anual ({{ f.origen_txt }}). Retiro: {{ f.liquidez }}. {{ f.nota }}{% if f.bono %} Incluye {{ f.bono_fmt }} de bono del Estado.{% endif %}{% if f.sin_interes %} Con tu aporte mensual, {{ f.sin_interes_fmt }} quedan esperando sin ganar interés hasta juntar el mínimo de {{ f.monto_min_fmt }} por depósito.{% endif %}</p>
+      </article>
+      {% endfor %}
+    {% else %}
+      <h2>Revisa los datos del formulario</h2>
+      <p class="lead">Corrige los campos marcados para ver la comparación.</p>
+    {% endif %}
+      <details>
+        <summary>Supuestos y límites de esta simulación</summary>
+        <p>Es una estimación referencial, no asesoría financiera. Las tasas son supuestos a octubre de 2026 (TPM 4,5%; IPC 4,1% a 12 meses). Los depósitos tienen tasa conocida; en fondos balanceados y de renta variable el resultado real puede ser distinto e incluso negativo. No se descuentan impuestos ni comisiones por separado. Los aportes se suponen al final de cada mes. En el APV régimen A se suma el bono del Estado (15% de lo aportado en el año, con tope de 6 UTM) al cumplir cada año completo.</p>
+      </details>
+    </section>
+  </div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  try {
+    var p = JSON.parse(localStorage.getItem("ahorro_perfil_v1"));
+    var el = document.getElementById("perfil-guardado");
+    if (!p || !el) return;
+    var q = new URLSearchParams();
+    ["monto", "ingresos", "plazo", "caida", "colchon"].forEach(function (c) { if (p[c] != null) q.set(c, p[c]); });
+    var a = document.createElement("a");
+    a.href = "{% url 'quiz' %}?" + q.toString();
+    a.textContent = "ver mi recomendación guardada";
+    el.append("Tienes un perfil guardado en este navegador: ", a, ".");
+    el.hidden = false;
+  } catch (e) {}
+})();
+</script>
+{% endblock %}

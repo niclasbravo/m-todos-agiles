@@ -1,0 +1,165 @@
+{% extends "comparador/base.html" %}
+{% block titulo %}Tu perfil y recomendación de ahorro e inversión{% endblock %}
+{% block extra_css %}<style>
+.quiz{max-width:640px;position:static}
+.quiz fieldset{border:0;padding:0;margin:0 0 22px}
+.quiz legend{font:600 1.05rem/1.35 Georgia,serif;margin-bottom:10px;padding:0}
+.op{display:flex;gap:10px;align-items:center;color:var(--ink);font-size:1rem;padding:9px 12px;border:1px solid var(--line);border-radius:6px;margin-bottom:6px;cursor:pointer}
+.op:has(input:checked){border-color:var(--azul);box-shadow:inset 3px 0 0 var(--azul)}
+.quiz input[type=radio]{width:auto;margin:0}
+.reco{max-width:760px}
+.reco h2{font-size:1.3rem;margin:0}
+.rec{padding:18px 0}
+.razones{margin:8px 0 0;padding-left:20px;font-size:.95rem}
+.razones li{margin-bottom:4px}
+.aviso{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--real);border-radius:6px;padding:10px 14px;margin:12px 0;font-size:.95rem;max-width:640px}
+.aviso.ok{border-left-color:var(--gana)}
+.desc{margin:6px 0 0;padding-left:20px;color:var(--mute);font-size:.92rem}
+.desc strong{color:var(--ink)}
+.acciones{margin:22px 0 10px}
+a.btn,button.link{display:inline-block;padding:10px 16px;background:var(--azul);color:#fff;border-radius:6px;text-decoration:none;font-weight:600;margin-right:16px}
+button.link{width:auto;border:0;cursor:pointer;font:inherit;font-weight:600}
+button.link.sec{background:transparent;color:var(--azul);border:1px solid var(--azul)}
+@media(prefers-color-scheme:dark){a.btn,button.link{color:#0e1621}button.link.sec{color:var(--azul)}}
+a.btn.sec{background:transparent;color:var(--azul);border:1px solid var(--azul)}
+.sel{border-left:4px solid var(--azul);padding-left:14px}
+.proy{margin:28px 0 8px;padding-top:6px;border-top:1px solid var(--line)}
+.proy h2{margin:14px 0 6px}
+.grafico{overflow-x:auto;margin:10px 0}
+.grafico svg{display:block;width:100%;min-width:460px;max-width:720px;height:auto}
+.grafico .grid{stroke:var(--line);stroke-width:1}
+.grafico .eje{fill:var(--mute);font-size:13px}
+.grafico .l{fill:none;stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+@media(max-width:600px){.grafico svg{min-width:0}.grafico .eje{font-size:16px}.grafico .et{font-size:15px}}
+.l-nom{stroke:var(--azul)}
+.l-real{stroke:var(--real)}
+.l-apor{stroke:var(--mute);stroke-width:2;stroke-dasharray:6 5}
+.l-efec{stroke:var(--efectivo);stroke-width:2.5;stroke-dasharray:2 6}
+.grafico .et{font-size:13px;font-weight:600}
+.et-nom{fill:var(--azul)}
+.et-real{fill:var(--real)}
+.et-apor{fill:var(--mute)}
+.et-efec{fill:var(--efectivo)}
+.hv{fill:transparent;stroke:transparent}
+.hv:hover{stroke:var(--ink);fill:var(--card)}
+.ln{display:inline-block;width:24px;border-top:3px solid;vertical-align:middle;margin-right:6px}
+.ln.nom{border-color:var(--azul)}
+.ln.real{border-color:var(--real)}
+.ln.apor{border-color:var(--mute);border-top-style:dashed}
+.ln.efec{border-color:var(--efectivo);border-top-style:dotted}
+.ajuste{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin:14px 0;max-width:640px;position:static}
+.ajuste p{margin:0}
+.ajuste input{width:150px}
+.ajuste button{width:auto;padding:9px 16px}
+.tabla{border-collapse:collapse;font-size:.9rem;margin-top:8px}
+.tabla th,.tabla td{padding:5px 12px;border-bottom:1px solid var(--line);text-align:right;font-weight:400}
+.tabla thead th{color:var(--mute);font-size:.82rem}
+.tabla th:first-child,.tabla td:first-child{text-align:left}
+</style>{% endblock %}
+{% block contenido %}
+  <h1>¿Con qué opción conviene partir?</h1>
+  {% if res %}
+  <section class="reco">
+    <p class="lead">Tu perfil es <strong>{{ res.perfil.nombre|lower }}</strong>. Con {{ res.perfil.monto_fmt }} y un plazo de {{ res.perfil.plazo_txt|lower }}, estas son las opciones que mejor calzan, ordenadas por puntaje:</p>
+    {% for r in res.recomendaciones %}
+    <article class="fila rec{% if r.seleccionada %} sel{% endif %}">
+      <header><h2>{{ forloop.counter }}. {{ r.instrumento.nombre }}</h2><span class="tag">Puntaje {{ r.puntaje }} de 100</span></header>
+      <ul class="razones">{% for t in r.razones %}<li>{{ t }}</li>{% endfor %}</ul>
+      <p class="meta">Puntaje por partes: rentabilidad {{ r.desglose.rentabilidad }}, calce de riesgo con tu plazo {{ r.desglose.calce }}, liquidez {{ r.desglose.liquidez }}. Fuente: {{ r.instrumento.fuente }}.</p>
+      <p><a class="btn sec" href="{{ r.url_ver }}"{% if r.seleccionada %} aria-current="true"{% endif %}>{% if r.seleccionada %}Viendo la proyección{% else %}Ver proyección de esta opción{% endif %}</a></p>
+    </article>
+    {% endfor %}
+    {% if proy %}{% include "comparador/_sin_invertir.html" with n=proy.sin_invertir %}{% else %}{% include "comparador/_sin_invertir.html" with n=nada %}{% endif %}
+    {% include "comparador/_proyeccion.html" %}
+    {% for n in res.notas %}<p class="aviso">{{ n }}</p>{% endfor %}
+
+    {% if res.descartados %}
+    <h2 style="margin-top:28px">Opciones que descartamos y por qué</h2>
+    {% for x in res.descartados %}
+    <div class="fila">
+      <h3>{{ x.instrumento.nombre }}</h3>
+      <ul class="desc">{% for m in x.motivos %}<li>{{ m }}</li>{% endfor %}</ul>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% if res.otras_viables %}<p class="meta">También cumplían tus condiciones, pero quedaron fuera del top 3: {{ res.otras_viables|join:", " }}.</p>{% endif %}
+
+    <p class="acciones"><a class="btn" href="{% url 'simulador' %}?{{ sim_qs }}">Ver cuánto podría crecer</a><a href="{% url 'quiz' %}">Actualizar mis respuestas</a></p>
+    <p class="aviso ok" id="estado-perfil" role="status"></p>
+    <details>
+      <summary>Cómo calculamos el puntaje</summary>
+      <p>Primero descartamos lo que no corresponde: monto menor al mínimo, plazo más corto que el recomendado, riesgo mayor al que toleras, y APV si no tienes fondo de emergencia. Luego puntuamos de 0 a 100 la rentabilidad, el calce entre el riesgo y tu plazo, y la liquidez. Normalmente pesan 35%, 40% y 25%; si no tienes fondo de emergencia, la liquidez sube a 45%.</p>
+    </details>
+    <p class="meta">Es una orientación educativa basada en reglas simples, no asesoría financiera. Las tasas son referenciales y no están garantizadas.</p>
+    {{ respuestas|json_script:"respuestas" }}
+  </section>
+  {% else %}
+  <p class="lead">Responde 4 preguntas e indica tu monto. Te mostramos hasta 3 opciones, con las razones y lo que descartamos. Es una orientación educativa, no asesoría financiera.</p>
+  <p class="aviso ok" id="perfil-banner" hidden></p>
+  <form class="quiz" method="get" id="quiz-form">
+    {% for field in form %}{% if field.name != "monto" %}
+    <fieldset>
+      <legend>{{ forloop.counter }}. {{ field.label }}</legend>
+      {% for radio in field %}<label class="op">{{ radio.tag }}<span>{{ radio.choice_label }}</span></label>{% endfor %}
+      {{ field.errors }}
+    </fieldset>
+    {% endif %}{% endfor %}
+    <fieldset>
+      <legend>Tu monto</legend>
+      <label for="{{ form.monto.id_for_label }}">{{ form.monto.label }}</label>
+      {{ form.monto }}
+      {{ form.monto.errors }}
+    </fieldset>
+    <button type="submit">Ver mi recomendación</button>
+  </form>
+  {% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  // El perfil vive solo en este navegador (localStorage). El servidor calcula y no guarda nada.
+  var KEY = "ahorro_perfil_v1";
+  var CAMPOS = ["monto", "ingresos", "plazo", "caida", "colchon"];
+  function leer() { try { return JSON.parse(localStorage.getItem(KEY)); } catch (e) { return null; } }
+  function guardar(o) { try { localStorage.setItem(KEY, JSON.stringify(o)); return true; } catch (e) { return false; } }
+  function borrar() { try { localStorage.removeItem(KEY); } catch (e) {} }
+  function consulta(p) { var q = new URLSearchParams(); CAMPOS.forEach(function (c) { if (p[c] != null) q.set(c, p[c]); }); return q.toString(); }
+  function fecha(iso) { try { return new Date(iso).toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" }); } catch (e) { return ""; } }
+
+  var datos = document.getElementById("respuestas");
+  if (datos) { // Resultado: guarda el perfil, o lo actualiza si ya existía.
+    var estado = document.getElementById("estado-perfil");
+    var nuevo = JSON.parse(datos.textContent);
+    nuevo.actualizado = new Date().toISOString();
+    var antes = leer();
+    var igual = !!antes && CAMPOS.every(function (c) { return String(antes[c]) === String(nuevo[c]); });
+    var ok = igual || guardar(nuevo);
+    estado.textContent = !ok ? "No pudimos guardar tu perfil en este navegador."
+      : (igual ? "Tu perfil guardado en este navegador está al día." : antes ? "Actualizamos tu perfil guardado en este navegador." : "Guardamos tu perfil en este navegador.")
+        + " La app no lo almacena en ningún servidor.";
+    return;
+  }
+
+  var form = document.getElementById("quiz-form");
+  var banner = document.getElementById("perfil-banner");
+  var previo = leer();
+  if (!form || !previo || location.search) return; // sin perfil guardado, o con errores que corregir
+
+  CAMPOS.forEach(function (c) {
+    if (previo[c] == null) return;
+    var radio = form.querySelector('input[type="radio"][name="' + c + '"][value="' + previo[c] + '"]');
+    if (radio) radio.checked = true;
+    else if (c === "monto") form.elements["monto"].value = previo[c];
+  });
+  var ver = document.createElement("a");
+  ver.href = "?" + consulta(previo);
+  ver.textContent = "Ver mi recomendación con este perfil";
+  var del = document.createElement("button");
+  del.type = "button"; del.className = "link sec"; del.textContent = "Borrar mi perfil";
+  del.addEventListener("click", function () { borrar(); location.href = location.pathname; });
+  banner.append("Tienes un perfil guardado en este navegador" + (previo.actualizado ? " (" + fecha(previo.actualizado) + ")" : "") +
+    ". Cargamos tus respuestas: cámbialas si algo cambió y vuelve a enviar. ", ver, " ", del);
+  banner.hidden = false;
+})();
+</script>
+{% endblock %}
