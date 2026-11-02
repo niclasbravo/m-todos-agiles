@@ -54,15 +54,17 @@ lo que pone la persona (gris, discontinua) y lo que valdría el dinero guardado 
  
 ## Instrumentos incluidos
  
-| Instrumento | Riesgo | Tasa usada | Origen de la tasa |
-|---|---|---|---|
-| Cuenta Vista Más (Banco Consorcio) | muy bajo | TPM + 0,5% anual | contratada |
-| DAP 30 días (Banco Ripley) | muy bajo | 0,41% mensual | publicada (tasas.cl) |
-| Visión Money Market (Principal AGF) | bajo | promedio anual de 3 años (14,23% acumulado) | histórica (Rankia, 23-09-2026) |
-| Progresión Deuda Largo Plazo (Principal AGF) | medio | promedio anual de 3 años (23,55% acumulado) | histórica (Rankia, 23-09-2026) |
-| Cartera Equilibrada (Principal AGF) | medio-alto | promedio anual de 3 años (37,79% acumulado, 11,3% anual) | histórica (Rankia, 23-09-2026) |
-| Capitales Acciones Chilenas (Principal AGF) | alto | promedio anual de 3 años (59,83% acumulado, 16,9% anual) | histórica (Rankia, 23-09-2026) |
-| APV régimen A | medio-alto | 7% anual + bono del Estado | supuesto del equipo |
+| Instrumento | Riesgo | Tasa anual usada | Origen (`tasa_origen`) | Fuente |
+|---|---|---|---|---|
+| Cuenta Vista Más (Banco Consorcio) | muy bajo | 5,1% (TPM 4,5% + 0,5% nominal, capitalización mensual) | contratada | Rankia 28-09-2026 |
+| DAP 30 días (Banco Ripley) | muy bajo | 5,0% (0,41% mensual) | contratada | tasas.cl |
+| Visión Money Market (Principal AGF) | bajo | 4,5% (promedio geométrico de 14,23% acumulado a 36 meses) | promedio_3a | Rankia 23-09-2026 |
+| Progresión Deuda Largo Plazo (Principal AGF) | medio | 7,3% (promedio geométrico de 23,55% acumulado a 36 meses) | promedio_3a | Rankia 23-09-2026 |
+| Cartera Equilibrada (Principal AGF) | medio-alto | 11,3% (promedio geométrico de 37,79% acumulado a 36 meses) | promedio_3a | Rankia 23-09-2026 |
+| Capitales Acciones Chilenas (Principal AGF) | alto | 16,9% (promedio geométrico de 59,83% acumulado a 36 meses) | promedio_3a | Rankia 23-09-2026; ficha Principal 31-08-2026 para riesgo/horizonte |
+| APV régimen A | medio-alto | 7,0% + bono del Estado (supuesto de largo plazo en un fondo balanceado) | supuesto | Sin fuente para la rentabilidad (bono: Superintendencia de Pensiones) |
+
+`contratada`: tasa publicada por la institución; `promedio_3a`: promedio anual de los últimos 3 años, no garantizado; `supuesto`: supuesto de largo plazo, no garantizado.
 
 ## Cómo funciona
  
@@ -93,10 +95,10 @@ Fecha de la revisión: 2 de noviembre de 2026.
 | Inflación de referencia | Verificado | IPC de septiembre 2026: 4,1% a 12 meses (INE). La app usa 3% por defecto, ajustable |
 | UTM $72.440 (noviembre 2026) | Verificado | calcular.cl. Ver nota abajo sobre el ticket |
 | APV régimen A: bono 15% y tope 6 UTM | Verificado | Superintendencia de Pensiones y Rankia |
-| Cuenta Vista Más: TPM + 0,5% | Publicado | Rankia, actualizada el 28-09-2026. Falta confirmar en el banco |
-| DAP Banco Ripley: 0,41% mensual | Publicado | tasas.cl (sin fecha visible). Chocale informó 0,40% el 22-09-2026. Falta confirmar en el banco |
-| Fondos Principal AGF: rentabilidad a 36 meses | Publicado | Rankia, datos al 23-09-2026, para los 4 fondos. Falta confirmar en Principal AGF o la CMF |
-| APV: rentabilidad de 7% | Supuesto | Ninguna fuente la publica; se supone un fondo balanceado |
+| Cuenta Vista Más: 5,1% anual efectivo (TPM 4,5% + 0,5% nominal, capitalización mensual), origen `contratada` | Publicado | Rankia, actualizada el 28-09-2026. Falta confirmar en el banco |
+| DAP Banco Ripley: 5,0% anual efectivo (0,41% mensual), origen `contratada` | Publicado | tasas.cl (sin fecha visible). Chocale informó 0,40% el 22-09-2026. Falta confirmar en el banco |
+| Fondos Principal AGF: Visión Money Market 4,5%, Progresión Deuda LP 7,3%, Cartera Equilibrada 11,3% y Capitales Acciones Chilenas 16,9% anual; origen `promedio_3a` (promedio geométrico del acumulado a 36 meses) | Publicado | Rankia, datos al 23-09-2026, para los 4 fondos. Falta confirmar en Principal AGF o la CMF |
+| APV: rentabilidad de 7% anual, origen `supuesto` | Supuesto | Ninguna fuente la publica; se supone un fondo balanceado |
 | Plazos mínimos (Cartera 3 años, Capitales 2 años, APV 5 años) y monto mínimo del APV | Supuesto | Definidos por el equipo |
 | Monto mínimo por aporte en fondos | Sin verificar | Se supone libre |
  
