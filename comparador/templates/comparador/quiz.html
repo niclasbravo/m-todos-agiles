@@ -200,8 +200,15 @@ function iniciar() {
   const mat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.75, ...extra });
   const pieza = (w, h, d, m, r = 0.05) => { const o = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 3, Math.min(r, w / 2, h / 2, d / 2)), m); o.castShadow = o.receiveShadow = true; return o; };
 
-  const agua = new THREE.Mesh(new THREE.CircleGeometry(4.2, 48), mat(0xc4e0ee, { roughness: 0.35 }));
-  agua.rotation.x = -Math.PI / 2; agua.position.y = -0.22; agua.receiveShadow = true; scene.add(agua);
+  const geoAgua = new THREE.RingGeometry(0.01, 4.2, 48, 14); geoAgua.rotateX(-Math.PI / 2);
+  const agua = new THREE.Mesh(geoAgua, mat(0xbcdcec, { roughness: 0.35, flatShading: true }));
+  agua.position.y = -0.22; agua.receiveShadow = true; scene.add(agua);
+  const aguaBase = geoAgua.attributes.position.array.slice();
+  function olas(t) { // olitas suaves alrededor de la mini isla
+    const a = geoAgua.attributes.position.array;
+    for (let k = 0; k < a.length; k += 3) a[k + 1] = Math.sin(aguaBase[k] * 1.6 + t * 1.6) * 0.035 + Math.cos(aguaBase[k + 2] * 1.9 + t * 1.2) * 0.03;
+    geoAgua.attributes.position.needsUpdate = true; geoAgua.computeVertexNormals();
+  }
   const isla = pieza(5.4, 0.36, 3.4, mat(0xf4f6f8), 0.18); isla.position.y = -0.18; scene.add(isla);
   const calle = pieza(5, 0.04, 0.42, mat(0xc9d0d9), 0.02); calle.position.y = 0.02; scene.add(calle);
   // Mismos barrios que el mapa grande: bancos adelante a la izquierda, fondos atrás, pensión adelante a la derecha.
@@ -257,7 +264,7 @@ function iniciar() {
       ed.cuerpo.material.color.copy(gris).lerp(blanco, a);
       ed.marca.visible = ed.escala > 0.6;
     });
-    if (!quieto) { giro += ((Math.sin(t * 0.4) * 0.12 + mx * 0.25) - giro) * 0.06; scene.rotation.y = giro; scene.position.y = Math.sin(t * 1.2) * 0.03; }
+    if (!quieto) { giro += ((Math.sin(t * 0.4) * 0.12 + mx * 0.25) - giro) * 0.06; scene.rotation.y = giro; scene.position.y = Math.sin(t * 1.2) * 0.03; olas(t); }
     renderer.render(scene, camara);
   });
 }
