@@ -101,6 +101,28 @@ main.wrap:has(.quiz),main.wrap:has(.reco){max-width:1120px}
 .tabla th:first-child,.tabla td:first-child{text-align:left}
 @media(max-width:820px){.grid{grid-template-columns:1fr}form{position:static}}
 @media(max-width:600px){.wrap{padding:24px 16px 64px}.topbar{padding-top:0;padding-bottom:0;gap:10px}.topbar nav{gap:12px}.wordmark{font-size:14px}h1{font-size:24px}.rec,.proy{padding:14px}.grafico{padding:2px}.tag{white-space:normal}.acciones a{margin-right:0}.nums{gap:4px 12px}}
+/* Movimiento: curvas propias, respuesta al presionar y entradas cortas (sin animar lo que se usa a cada rato). */
+:root{--ease-out:cubic-bezier(.23,1,.32,1)}
+button,a.btn,button.link,.tiempo .play{transition:transform 160ms var(--ease-out),background-color 160ms ease,border-color 160ms ease}
+button:active,a.btn:active,button.link:active,.tiempo .play:active{transform:scale(.97)}
+.op{transition:border-color 150ms ease,background-color 150ms ease}
+.op:active{transform:scale(.99)}
+@media(hover:hover) and (pointer:fine){
+  a.btn.sec:hover,button.link.sec:hover{border-color:var(--text)}
+  .op:hover{border-color:var(--control)}
+  .topbar a:hover{text-decoration-thickness:2px}
+}
+.fila{animation:entrar 320ms var(--ease-out) both}
+.fila:nth-of-type(2){animation-delay:50ms}.fila:nth-of-type(3){animation-delay:100ms}.fila:nth-of-type(4){animation-delay:150ms}
+.fila:nth-of-type(5){animation-delay:200ms}.fila:nth-of-type(6){animation-delay:250ms}.fila:nth-of-type(n+7){animation-delay:300ms}
+@keyframes entrar{from{opacity:0;transform:translateY(8px)}}
+.ficha{transition:filter 200ms ease,opacity 200ms ease}
+.ficha.cambia{filter:blur(2px);opacity:.7;transition:none}
+@media(prefers-reduced-motion:reduce){
+  .fila{animation:aparecer 200ms ease both}
+  @keyframes aparecer{from{opacity:0}}
+  button:active,a.btn:active,button.link:active,.op:active,.tiempo .play:active{transform:none}
+}
 </style>{% block extra_css %}{% endblock %}
 </head>
 <body>
