@@ -76,6 +76,7 @@
 .linea input[type=range]{width:100%;height:26px;border:0;padding:0;background:transparent;accent-color:#d99a00}
 .hitos{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 .hitos span.on{color:var(--text);font-weight:600}
+@media(max-width:700px){.hitos.muchos span:nth-child(even):not(:last-child){display:none}}
 .pin{position:absolute;transform:translate(-50%,-100%);background:#fff;color:#0a0a0a;border-radius:8px;padding:3px 8px;font-size:12px;font-weight:700;line-height:1.3;white-space:nowrap;box-shadow:0 4px 14px rgba(15,23,42,.14);font-variant-numeric:tabular-nums;transition:transform 220ms var(--ease-out),padding 220ms var(--ease-out)}
 .pin b{display:none;font-size:13px}
 .pin .vivo{display:none;color:#5f6368;margin-top:2px;font-weight:400}
@@ -271,6 +272,7 @@ function iniciar() {
     const marcas = total >= 24 ? Array.from({ length: Math.floor(total / 12) + 1 }, (_, k) => k * 12) : [0, total];
     if (marcas[marcas.length - 1] !== total) marcas.push(total);
     hitos.innerHTML = marcas.map((m) => `<span data-m="${m}">${m === 0 ? "Hoy" : m % 12 === 0 ? `Año ${m / 12}` : `${m} meses`}</span>`).join("");
+    hitos.classList.toggle("muchos", marcas.length > 6);
   }
   armarHitos();
 
