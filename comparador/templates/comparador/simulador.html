@@ -25,34 +25,36 @@
       {% include "comparador/_sin_invertir.html" with n=nada %}
       <h2>Aportando {{ filas.0.aportado_fmt }} en {{ d.meses }} meses, podrías tener:</h2>
       <p class="leyenda">
-        <span><i class="sw" style="background:var(--data-ink)"></i>Lo que pones tú</span>
-        <span><i class="sw" style="background:var(--gana)"></i>Ganancia</span>
-        <span><i class="sw" style="background:var(--real)"></i>Valor real, en pesos de hoy</span>
+        <span><i class="sw" style="background:var(--serie-pones)"></i>Lo que pones tú</span>
+        <span><i class="sw" style="background:var(--serie-gana)"></i>Ganancia</span>
+        <span><i class="sw tick" style="background:var(--real)"></i>Valor real, en pesos de hoy</span>
       </p>
-      <div class="tarjetas-sim">
-      {% for f in filas %}
-      {% if f.id == "apv_a" %}{% with cat="apv" %}{% include "comparador/_cat.html" %}{% endwith %}{% elif f.id == "cuenta_vista_mas" or f.id == "dap_ripley_30" %}{% with cat="banco" %}{% include "comparador/_cat.html" %}{% endwith %}{% else %}{% with cat="fondo" %}{% include "comparador/_cat.html" %}{% endwith %}{% endif %}
-        <header>
-          <h3>{{ f.nombre }}</h3>
-          {% if f.nombre in destacar %}<span class="insignia">Recomendada para ti</span>{% endif %}
-        </header>
-        <div class="nums"><strong>{{ f.final_fmt }}</strong><span>Ganancia {{ f.ganancia_fmt }}</span></div>
-        <div class="barra" role="img" aria-label="{{ f.nombre }}: {{ f.final_fmt }}, valor real {{ f.real_fmt }}">
-          <span class="a" style="width:{{ f.pct_aportado }}%"></span><span class="g" style="width:{{ f.pct_ganancia }}%"></span><i style="left:{{ f.pct_real }}%"></i>
+      <ol class="ranking">
+      {% for f in filas|dictsortreversed:"final" %}
+      <li class="puesto{% if f.nombre in destacar %} destacada{% endif %}">
+        <span class="pos" aria-hidden="true">{{ forloop.counter }}</span>
+        <span class="picto" title="{% if f.id == "apv_a" %}Pensión{% elif f.id == "cuenta_vista_mas" or f.id == "dap_ripley_30" %}Banco{% else %}Fondo mutuo{% endif %}">{% if f.id == "apv_a" %}<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5 15l11-9 11 9M8 13v13h16V13"/><path d="M14 26v-6h4v6"/></svg>{% elif f.id == "cuenta_vista_mas" or f.id == "dap_ripley_30" %}<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5 13h22M7 13v12M25 13v12M4 25h24M6 13l10-7 10 7"/><path d="M12 25v-6h8v6"/><path d="M11 16h2M19 16h2"/></svg>{% else %}<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M11 28V5h10v23M8 28h16"/><path d="M14 9h4M14 13h4M14 17h4M14 21h4"/><path d="M16 5V2"/></svg>{% endif %}</span>
+        <div class="cuerpo">
+          <div class="linea1">
+            <h3>{{ f.nombre }}</h3>
+            {% if f.nombre in destacar %}<span class="insignia">Recomendada para ti</span>{% endif %}
+            <strong class="monto">{{ f.final_fmt }}</strong>
+          </div>
+          <div class="barra" role="img" aria-label="{{ f.nombre }}: {{ f.final_fmt }}, valor real {{ f.real_fmt }}" title="Pones {{ f.aportado_fmt }}, ganancia {{ f.ganancia_fmt }}, valor real {{ f.real_fmt }}">
+            <span class="a" style="width:{{ f.pct_aportado }}%"></span><span class="g" style="width:{{ f.pct_ganancia }}%"></span><i style="left:{{ f.pct_real }}%"></i>
+          </div>
+          <p class="datos">Rinde {{ f.tasa_txt }}% al año con riesgo {{ f.riesgo_txt }}. Ganas {{ f.ganancia_fmt }}; en pesos de hoy equivale a {{ f.real_fmt }}.</p>
+          <div class="pie">
+            <details class="detalle">
+              <summary>Ver detalle</summary>
+              <p class="meta">Rentabilidad referencial: {{ f.tasa_txt }}% anual ({{ f.origen_txt }}). Retiro: {{ f.liquidez }}. {{ f.nota }}{% if f.bono %} Incluye {{ f.bono_fmt }} de bono del Estado.{% endif %}{% if f.sin_interes %} Con tu aporte mensual, {{ f.sin_interes_fmt }} quedan esperando sin ganar interés hasta juntar el mínimo de {{ f.monto_min_fmt }} por depósito.{% endif %}</p>
+            </details>
+            <button type="button" class="ver-mapa" data-nombre="{{ f.nombre }}">Ver en el mapa</button>
+          </div>
         </div>
-        <svg class="mini" viewBox="0 0 200 52" preserveAspectRatio="none" aria-hidden="true" data-nombre="{{ f.nombre }}"></svg>
-        <p class="chips"><span class="chip oro">{{ f.tasa_txt }}% anual</span><span class="chip">Riesgo {{ f.riesgo_txt }}</span><span class="chip">Retiro: {{ f.liquidez }}</span></p>
-        <p class="real-txt">Valor real <b>{{ f.real_fmt }}</b> en pesos de hoy</p>
-        <div class="pie-tarjeta">
-        <button type="button" class="ver-mapa" data-nombre="{{ f.nombre }}">Ver en el mapa</button>
-        <details class="detalle">
-          <summary>Ver detalle</summary>
-          <p class="meta">Rentabilidad referencial: {{ f.tasa_txt }}% anual ({{ f.origen_txt }}). Retiro: {{ f.liquidez }}. {{ f.nota }}{% if f.bono %} Incluye {{ f.bono_fmt }} de bono del Estado.{% endif %}{% if f.sin_interes %} Con tu aporte mensual, {{ f.sin_interes_fmt }} quedan esperando sin ganar interés hasta juntar el mínimo de {{ f.monto_min_fmt }} por depósito.{% endif %}</p>
-        </details>
-        </div>
-      </article>
+      </li>
       {% endfor %}
-      </div>
+      </ol>
     {% else %}
       <h2>Revisa los datos del formulario</h2>
       <p class="lead">Corrige los campos marcados para ver la comparación.</p>
@@ -83,65 +85,40 @@
 </script>
 <script>
 (function () {
-  // Revelado al hacer scroll, montos que cuentan hacia arriba e inclinación sutil de las tarjetas.
+  // Un solo momento orquestado: al llegar a la tabla, las barras crecen en orden y los montos cuentan.
+  // Y «Ver en el mapa» sube a la maqueta y enfoca esa sucursal.
   var quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (quieto || !("IntersectionObserver" in window)) return;
-  var bloques = Array.prototype.slice.call(document.querySelectorAll(".nada, .tarjetas-sim .fila"));
-  bloques.forEach(function (el, k) {
-    el.classList.add("por-ver");
-    if (el.classList.contains("fila")) el.style.setProperty("--retraso", ((k - 1) % 2) * 90 + "ms");
-  });
-  function contar(el) {
-    var meta = parseInt(el.textContent.replace(/\D/g, ""), 10); if (!meta) return;
-    var t0 = performance.now(), dura = 900;
-    (function paso(ahora) {
-      var u = Math.min(1, (ahora - t0) / dura), suave = 1 - Math.pow(1 - u, 3);
-      el.textContent = "$" + Math.round(meta * suave).toLocaleString("es-CL");
-      if (u < 1) requestAnimationFrame(paso);
-    })(t0);
-  }
-  var obs = new IntersectionObserver(function (entradas) {
-    entradas.forEach(function (e) {
-      if (!e.isIntersecting) return;
-      e.target.classList.add("visto"); obs.unobserve(e.target);
-      var n = e.target.querySelector(".nums strong"); if (n) contar(n);
-    });
-  }, { threshold: 0.2, rootMargin: "0px 0px -40px 0px" });
-  bloques.forEach(function (el) { obs.observe(el); });
-  if (!matchMedia("(hover: hover) and (pointer: fine)").matches) return;
-  document.querySelectorAll(".tarjetas-sim .fila").forEach(function (card) {
-    card.addEventListener("pointermove", function (ev) {
-      var r = card.getBoundingClientRect(), x = (ev.clientX - r.left) / r.width - 0.5, y = (ev.clientY - r.top) / r.height - 0.5;
-      card.style.transform = "perspective(900px) rotateX(" + (-y * 4).toFixed(2) + "deg) rotateY(" + (x * 5).toFixed(2) + "deg) translateY(-3px)";
-    });
-    card.addEventListener("pointerleave", function () { card.style.transform = ""; });
-  });
-})();
-</script>
-<script>
-(function () {
-  // Mini gráfico de crecimiento por tarjeta (mismos datos del mapa) y botón «Ver en el mapa».
-  var datos = document.getElementById("datos-mapa");
-  if (datos) {
-    var escena = JSON.parse(datos.textContent), ns = "http://www.w3.org/2000/svg";
-    var maximo = Math.max.apply(null, escena.inst.map(function (d) { return d.puntos[d.puntos.length - 1][1]; }));
-    document.querySelectorAll("svg.mini").forEach(function (svg) {
-      var d = escena.inst.find(function (x) { return x.nombre === svg.dataset.nombre; }); if (!d) return;
-      var n = d.puntos.length, X = function (k) { return (k / (n - 1)) * 200; }, Y = function (v) { return 50 - (v / maximo) * 46; };
-      var linea = function (col) { return d.puntos.map(function (p, k) { return (k ? "L" : "M") + X(k).toFixed(1) + " " + Y(p[col]).toFixed(1); }).join(" "); };
-      var area = linea(1) + " L200 52 L0 52 Z";
-      [["path", { d: area, class: "mini-area" }], ["path", { d: linea(0), class: "mini-pones" }], ["path", { d: linea(1), class: "mini-tienes" }]].forEach(function (e) {
-        var el = document.createElementNS(ns, e[0]); Object.keys(e[1]).forEach(function (k) { el.setAttribute(k, e[1][k]); }); svg.appendChild(el);
-      });
-    });
-  }
   document.querySelectorAll(".ver-mapa").forEach(function (b) {
     b.addEventListener("click", function () {
-      var nombre = b.dataset.nombre;
-      window.scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
-      setTimeout(function () { if (window.enfocarSucursal) window.enfocarSucursal(nombre); }, 450);
+      window.scrollTo({ top: 0, behavior: quieto ? "auto" : "smooth" });
+      setTimeout(function () { if (window.enfocarSucursal) window.enfocarSucursal(b.dataset.nombre); }, 450);
     });
   });
+  var tabla = document.querySelector(".ranking");
+  if (!tabla || quieto || !("IntersectionObserver" in window)) return;
+  tabla.classList.add("por-ver");
+  tabla.querySelectorAll(".puesto").forEach(function (li, k) { li.style.setProperty("--retraso", k * 80 + "ms"); });
+  var nada = document.querySelector(".nada"); if (nada) nada.classList.add("por-ver");
+  function contar(el, retraso) {
+    var meta = parseInt(el.textContent.replace(/\D/g, ""), 10); if (!meta) return;
+    el.textContent = "$0";
+    setTimeout(function () {
+      var t0 = performance.now();
+      (function paso(ahora) {
+        var u = Math.min(1, (ahora - t0) / 900), suave = 1 - Math.pow(1 - u, 3);
+        el.textContent = "$" + Math.round(meta * suave).toLocaleString("es-CL");
+        if (u < 1) requestAnimationFrame(paso);
+      })(t0);
+    }, retraso);
+  }
+  var obs = new IntersectionObserver(function (es) {
+    es.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      e.target.classList.add("visto"); obs.unobserve(e.target);
+      if (e.target === tabla) tabla.querySelectorAll(".monto").forEach(function (m, k) { contar(m, k * 80 + 150); });
+    });
+  }, { threshold: 0.15 });
+  obs.observe(tabla); if (nada) obs.observe(nada);
 })();
 </script>
 {% endblock %}
