@@ -1,5 +1,47 @@
 {% extends "comparador/base.html" %}
 {% block titulo %}Tu perfil y recomendación de ahorro e inversión{% endblock %}
+{% block extra_css %}<style>
+/* Quiz en pasos: solo se activa con JavaScript (clase .pasos); sin JS queda el formulario completo. */
+.quiz.pasos{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:26px 28px 22px;box-shadow:0 10px 30px rgba(15,23,42,.08);max-width:680px}
+.progreso{display:flex;align-items:center;gap:14px;margin:0 0 22px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.progreso .barra-p{flex:1;height:6px;border-radius:99px;background:var(--raised);overflow:hidden}
+.progreso .barra-p i{display:block;height:100%;width:0;border-radius:inherit;background:#d99a00;transition:width 320ms var(--ease-out)}
+.quiz.pasos .pilas{display:grid}
+.quiz.pasos fieldset{grid-area:1/1;margin:0;transition:opacity 260ms var(--ease-out),transform 260ms var(--ease-out)}
+.quiz.pasos fieldset[inert]{opacity:0;transform:translateX(var(--sale,40px));pointer-events:none}
+.quiz.pasos legend{font:700 clamp(22px,3vw,28px)/1.15 "Bricolage Grotesque",Geist,system-ui,sans-serif;letter-spacing:-.02em;margin-bottom:18px}
+.quiz.pasos .op{position:relative;min-height:56px;padding:14px 48px 14px 16px;border-radius:10px;margin-bottom:10px;font-size:16px;transition:border-color 150ms ease,background-color 150ms ease,transform 160ms var(--ease-out)}
+.quiz.pasos .op .tecla{position:absolute;right:14px;top:50%;transform:translateY(-50%);width:24px;height:24px;border:1px solid var(--border);border-radius:6px;display:grid;place-items:center;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.quiz.pasos .op:has(input:checked){border:2px solid #d99a00;background:color-mix(in srgb,#f2b937 12%,var(--surface));padding:13px 47px 13px 15px}
+.quiz.pasos .op:has(input:checked) .tecla{background:#d99a00;border-color:#d99a00;color:#fff;animation:marca 260ms var(--ease-out)}
+@keyframes marca{from{transform:translateY(-50%) scale(.6)}}
+.quiz.pasos input[type=number]{height:56px;font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.nav-pasos{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:18px}
+.nav-pasos .atras{width:auto;background:transparent;color:var(--text);border:1px solid var(--control)}
+.nav-pasos .atras[disabled]{visibility:hidden}
+.nav-pasos .sig,.quiz.pasos>button[type=submit]{width:auto;min-width:180px}
+.quiz.pasos>button[type=submit]{display:none}
+.quiz.pasos.ultimo>button[type=submit]{display:inline-flex;position:absolute;right:28px;bottom:22px}
+.quiz.pasos.ultimo .nav-pasos .sig{visibility:hidden}
+.ayuda-teclas{margin:14px 0 0;font-size:12px;color:var(--muted)}
+@media(max-width:600px){
+  .quiz.pasos{padding:20px 18px 18px;border-radius:12px}
+  .quiz.pasos.ultimo>button[type=submit]{right:18px;bottom:18px}
+  .ayuda-teclas{display:none}
+}
+@media(prefers-reduced-motion:reduce){.quiz.pasos fieldset[inert]{transform:none}}
+.quiz-grid{display:grid;grid-template-columns:minmax(0,680px) minmax(240px,320px);gap:28px;align-items:start}
+.resumen{position:sticky;top:24px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 22px}
+.resumen h2{font-size:16px;margin:0 0 12px}
+.resumen ol{list-style:none;margin:0;padding:0}
+.resumen li{display:grid;grid-template-columns:22px 1fr;gap:10px;padding:10px 0;border-top:1px solid var(--rule);font-size:13px;color:var(--muted)}
+.resumen li:first-child{border-top:0}
+.resumen li b{display:block;color:var(--text);font-weight:600;font-size:14px;transition:opacity 200ms ease}
+.resumen .ok{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border);display:grid;place-items:center;font-size:12px;color:transparent;transition:background-color 200ms ease,border-color 200ms ease,transform 200ms var(--ease-out)}
+.resumen li.hecho .ok{background:#d99a00;border-color:#d99a00;color:#fff;transform:scale(1.05)}
+.resumen li.ahora{color:var(--text)}
+@media(max-width:900px){.quiz-grid{grid-template-columns:1fr}.resumen{display:none}}
+</style>{% endblock %}
 {% block contenido %}
   <h1>¿Con qué opción conviene partir?</h1>
   {% if res %}
@@ -104,6 +146,114 @@
   banner.append("Tienes un perfil guardado en este navegador" + (previo.actualizado ? " (" + fecha(previo.actualizado) + ")" : "") +
     ". Cargamos tus respuestas: cámbialas si algo cambió y vuelve a enviar. ", ver, " ", del);
   banner.hidden = false;
+})();
+</script>
+<script>
+(function () {
+  // Quiz en pasos: una pregunta por pantalla, con progreso, avance automático y atajos de teclado.
+  var form = document.getElementById("quiz-form");
+  if (!form) return;
+  var pasos = Array.prototype.slice.call(form.querySelectorAll("fieldset"));
+  if (pasos.length < 2) return;
+  form.classList.add("pasos");
+  var pilas = document.createElement("div"); pilas.className = "pilas";
+  form.insertBefore(pilas, pasos[0]);
+  pasos.forEach(function (f) { pilas.appendChild(f); });
+  var progreso = document.createElement("div"); progreso.className = "progreso";
+  progreso.innerHTML = '<span aria-live="polite"></span><span class="barra-p"><i></i></span>';
+  form.insertBefore(progreso, pilas);
+  var nav = document.createElement("div"); nav.className = "nav-pasos";
+  nav.innerHTML = '<button type="button" class="atras">Atrás</button><button type="button" class="sig">Siguiente</button>';
+  pilas.after(nav);
+  var ayuda = document.createElement("p"); ayuda.className = "ayuda-teclas";
+  ayuda.textContent = "Atajo: responde con las teclas 1 a 5 y muévete con las flechas.";
+  nav.after(ayuda);
+  pasos.forEach(function (f) {
+    f.querySelectorAll(".op").forEach(function (op, k) {
+      var t = document.createElement("span"); t.className = "tecla"; t.textContent = k + 1; t.setAttribute("aria-hidden", "true");
+      op.appendChild(t);
+    });
+  });
+  var atras = nav.querySelector(".atras"), sig = nav.querySelector(".sig");
+  var actual = 0;
+  var conError = pasos.findIndex(function (f) { return f.querySelector(".errorlist"); });
+  if (conError >= 0) actual = conError;
+
+  function respondido(f) {
+    var radios = f.querySelectorAll("input[type=radio]");
+    if (radios.length) return Array.prototype.some.call(radios, function (r) { return r.checked; });
+    var n = f.querySelector("input"); return n && n.value !== "";
+  }
+  var ir = function (i, direccion) {
+    i = Math.max(0, Math.min(pasos.length - 1, i));
+    pasos.forEach(function (f, k) {
+      var activo = k === i;
+      f.style.setProperty("--sale", (k < i ? -40 : 40) + "px");
+      if (activo) f.removeAttribute("inert"); else f.setAttribute("inert", "");
+    });
+    actual = i;
+    progreso.firstChild.textContent = "Pregunta " + (i + 1) + " de " + pasos.length;
+    progreso.querySelector("i").style.width = ((i + 1) / pasos.length * 100) + "%";
+    atras.disabled = i === 0;
+    sig.disabled = !respondido(pasos[i]);
+    form.classList.toggle("ultimo", i === pasos.length - 1);
+    if (direccion) {
+      var foco = pasos[i].querySelector("input:checked") || pasos[i].querySelector("input");
+      if (foco) foco.focus({ preventScroll: true });
+    }
+  };
+  atras.addEventListener("click", function () { ir(actual - 1, -1); });
+  sig.addEventListener("click", function () { if (respondido(pasos[actual])) ir(actual + 1, 1); });
+  var espera;
+  form.addEventListener("change", function (ev) {
+    sig.disabled = !respondido(pasos[actual]);
+    if (ev.target.type === "radio" && actual < pasos.length - 1) {
+      clearTimeout(espera);
+      espera = setTimeout(function () { ir(actual + 1, 1); }, 280);
+    }
+  });
+  form.addEventListener("input", function () { sig.disabled = !respondido(pasos[actual]); });
+  form.addEventListener("keydown", function (ev) {
+    if (ev.target.type === "number") {
+      if (ev.key === "ArrowLeft" && ev.target.value === "") ir(actual - 1, -1);
+      return;
+    }
+    var n = parseInt(ev.key, 10);
+    var radios = pasos[actual].querySelectorAll("input[type=radio]");
+    if (n >= 1 && n <= radios.length) {
+      ev.preventDefault(); radios[n - 1].checked = true;
+      radios[n - 1].dispatchEvent(new Event("change", { bubbles: true }));
+    } else if (ev.key === "ArrowRight" || (ev.key === "Enter" && radios.length)) {
+      ev.preventDefault(); if (respondido(pasos[actual])) ir(actual + 1, 1);
+    } else if (ev.key === "ArrowLeft") { ev.preventDefault(); ir(actual - 1, -1); }
+  });
+  // Resumen en vivo: el perfil se va armando con cada respuesta.
+  var grid = document.createElement("div"); grid.className = "quiz-grid";
+  form.parentNode.insertBefore(grid, form); grid.appendChild(form);
+  var resumen = document.createElement("aside"); resumen.className = "resumen"; resumen.setAttribute("aria-label", "Tus respuestas");
+  resumen.innerHTML = "<h2>Tu perfil</h2><ol></ol>";
+  grid.appendChild(resumen);
+  var cortos = ["Ingresos", "Plazo", "Si cae 10%", "Fondo de emergencia", "Monto"];
+  function pintarResumen() {
+    var ol = resumen.querySelector("ol"); ol.innerHTML = "";
+    pasos.forEach(function (f, k) {
+      var marcado = f.querySelector("input[type=radio]:checked"), numero = f.querySelector("input[type=number]");
+      var txt = marcado ? marcado.parentNode.querySelector("span").textContent
+        : numero && numero.value ? "$" + Number(numero.value).toLocaleString("es-CL") : "Sin responder";
+      var li = document.createElement("li");
+      if (marcado || (numero && numero.value)) li.className = "hecho";
+      if (k === actual) li.className += " ahora";
+      li.innerHTML = '<span class="ok" aria-hidden="true">✓</span><span></span>';
+      li.lastChild.textContent = cortos[k] || "Pregunta " + (k + 1);
+      var b = document.createElement("b"); b.textContent = txt; li.lastChild.appendChild(b);
+      ol.appendChild(li);
+    });
+  }
+  form.addEventListener("change", pintarResumen);
+  form.addEventListener("input", pintarResumen);
+  var irOriginal = ir;
+  ir = function (i, d) { irOriginal(i, d); pintarResumen(); };
+  ir(actual, 0);
 })();
 </script>
 {% endblock %}
