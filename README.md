@@ -34,7 +34,9 @@ source venv/bin/activate
 ## Ejecutar
     pip install -r requirements.txt
     python manage.py test
-    python manage.py runserver   # http://127.0.0.1:8000
+    python manage.py runserver
+
+    Correr en un navegador ' http://127.0.0.1:8000 '
 
 ## Funcionalidades
  
