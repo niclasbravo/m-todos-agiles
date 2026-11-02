@@ -41,10 +41,10 @@
   </form>
   <details>
     <summary>Ver los datos del gráfico</summary>
-    <table class="tabla">
+    <div class="tabla-scroll"><table class="tabla">
       <thead><tr><th scope="col">Plazo</th><th scope="col">Lo que pones tú</th><th scope="col">Con la rentabilidad</th><th scope="col">Descontando inflación</th><th scope="col">Guardado sin invertir</th></tr></thead>
       <tbody>{% for f in proy.tabla %}<tr><th scope="row">{{ f.periodo }}</th><td>{{ f.aportado }}</td><td>{{ f.nominal }}</td><td>{{ f.real }}</td><td>{{ f.efectivo }}</td></tr>{% endfor %}</tbody>
-    </table>
+    </table></div>
   </details>
   <p class="meta">Proyección preliminar con el monto que indicaste{% if proy.aporte %} y los aportes mensuales que agregaste, que se suponen al final de cada mes{% else %}. Puedes sumar un aporte mensual en el formulario de arriba{% endif %}. La rentabilidad se mantiene constante, algo que en la realidad no ocurre, sobre todo en fondos.</p>
 {% else %}
