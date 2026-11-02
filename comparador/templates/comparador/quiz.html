@@ -6,9 +6,9 @@
 .progreso{display:flex;align-items:center;gap:14px;margin:0 0 22px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
 .progreso .barra-p{flex:1;height:6px;border-radius:99px;background:var(--raised);overflow:hidden}
 .progreso .barra-p i{display:block;height:100%;width:0;border-radius:inherit;background:#d99a00;transition:width 320ms var(--ease-out)}
-.quiz.pasos .pilas{display:grid}
-.quiz.pasos fieldset{grid-area:1/1;margin:0;transition:opacity 260ms var(--ease-out),transform 260ms var(--ease-out)}
-.quiz.pasos fieldset[inert]{opacity:0;transform:translateX(var(--sale,40px));pointer-events:none}
+.quiz.pasos .pilas{position:relative;transition:height 260ms var(--ease-out)}
+.quiz.pasos fieldset{position:relative;margin:0;transition:opacity 260ms var(--ease-out),transform 260ms var(--ease-out)}
+.quiz.pasos fieldset[inert]{position:absolute;top:0;left:0;right:0;opacity:0;transform:translateX(var(--sale,40px));pointer-events:none}
 .quiz.pasos legend{font:700 clamp(22px,3vw,28px)/1.15 "Bricolage Grotesque",Geist,system-ui,sans-serif;letter-spacing:-.02em;margin-bottom:18px}
 .quiz.pasos .op{position:relative;min-height:56px;padding:14px 48px 14px 16px;border-radius:10px;margin-bottom:10px;font-size:16px;transition:border-color 150ms ease,background-color 150ms ease,transform 160ms var(--ease-out)}
 .quiz.pasos .op .tecla{position:absolute;right:14px;top:50%;transform:translateY(-50%);width:24px;height:24px;border:1px solid var(--border);border-radius:6px;display:grid;place-items:center;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
@@ -28,8 +28,21 @@
   .quiz.pasos{padding:20px 18px 18px;border-radius:12px}
   .quiz.pasos.ultimo>button[type=submit]{right:18px;bottom:18px}
   .ayuda-teclas{display:none}
+  .quiz.pasos legend{font-size:19px}
 }
 @media(prefers-reduced-motion:reduce){.quiz.pasos fieldset[inert]{transform:none}}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.rec h2{display:flex;align-items:center;gap:12px}
+.medalla{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font:800 17px/1 "Bricolage Grotesque",Geist,system-ui,sans-serif;color:#2b2118;
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.18),inset 0 2px 0 rgba(255,255,255,.45);animation:medalla 420ms var(--ease-out) both}
+.medalla.m1{background:#f2c14e}.medalla.m2{background:#cfd6de}.medalla.m3{background:#e0a46e}
+.rec:nth-of-type(2) .medalla{animation-delay:80ms}.rec:nth-of-type(3) .medalla{animation-delay:160ms}
+@keyframes medalla{from{opacity:0;transform:scale(.6) rotate(-20deg)}}
+.puntaje{display:flex;flex-direction:column;align-items:flex-end;gap:6px;font-variant-numeric:tabular-nums}
+.barra-puntaje{display:block;width:120px;height:6px;border-radius:99px;background:var(--raised);overflow:hidden}
+.barra-puntaje::after{content:"";display:block;height:100%;width:var(--p);border-radius:inherit;background:#d99a00;animation:llenar 700ms 200ms var(--ease-out) both}
+@keyframes llenar{from{width:0}}
+@media(prefers-reduced-motion:reduce){.medalla,.barra-puntaje::after{animation:none}}
 .quiz-grid{display:grid;grid-template-columns:minmax(0,680px) minmax(240px,320px);gap:28px;align-items:start}
 .resumen{position:sticky;top:24px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 22px}
 .resumen h2{font-size:16px;margin:0 0 12px}
@@ -38,9 +51,28 @@
 .resumen li:first-child{border-top:0}
 .resumen li b{display:block;color:var(--text);font-weight:600;font-size:14px;transition:opacity 200ms ease}
 .resumen .ok{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border);display:grid;place-items:center;font-size:12px;color:transparent;transition:background-color 200ms ease,border-color 200ms ease,transform 200ms var(--ease-out)}
-.resumen li.hecho .ok{background:#d99a00;border-color:#d99a00;color:#fff;transform:scale(1.05)}
+.resumen li.hecho .ok{background:#d99a00;border-color:#d99a00;transform:scale(1.05)}
+.resumen li.hecho .ok::after{content:"";width:5px;height:9px;border:solid #fff;border-width:0 2px 2px 0;transform:translateY(-1px) rotate(45deg)}
 .resumen li.ahora{color:var(--text)}
-@media(max-width:900px){.quiz-grid{grid-template-columns:1fr}.resumen{display:none}}
+.medidor{margin:-4px 0 12px;padding-bottom:12px;border-bottom:1px solid var(--rule)}
+.medidor-3d{height:170px;cursor:default}
+.medidor-3d canvas{display:block;width:100%;height:100%}
+.medidor-perfil{margin:0;text-align:center}
+.medidor-perfil span{display:block;font-size:12px;color:var(--muted)}
+.medidor-perfil strong{display:block;font:800 28px/1.1 "Bricolage Grotesque",Geist,system-ui,sans-serif;letter-spacing:-.02em;transition:color 200ms ease}
+.medidor-perfil small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.medidor-perfil.cambia strong{animation:latir 360ms var(--ease-out)}
+@keyframes latir{40%{transform:scale(1.08)}}
+@media(max-width:900px){
+  .quiz-grid{grid-template-columns:1fr}
+  .resumen{position:static;order:-1;padding:12px 16px}
+  .resumen h2,.resumen ol{display:none}
+  .medidor{display:grid;grid-template-columns:150px 1fr;align-items:center;gap:8px;margin:0;padding:0;border:0}
+  .medidor-3d{height:110px}
+  .medidor-perfil{text-align:left}
+  .medidor-perfil strong{font-size:24px}
+}
+@media(prefers-reduced-motion:reduce){.medidor-perfil.cambia strong{animation:none}}
 </style>{% endblock %}
 {% block contenido %}
   <h1>¿Con qué opción conviene partir?</h1>
@@ -49,7 +81,7 @@
     <p class="lead">Tu perfil es <strong>{{ res.perfil.nombre|lower }}</strong>. Con {{ res.perfil.monto_fmt }} y un plazo de {{ res.perfil.plazo_txt|lower }}, estas son las opciones que mejor calzan, ordenadas por puntaje:</p>
     {% for r in res.recomendaciones %}
     <article class="fila rec{% if r.seleccionada %} sel{% endif %}">
-      <header><h2>{{ forloop.counter }}. {{ r.instrumento.nombre }}</h2><span class="tag">Puntaje {{ r.puntaje }} de 100</span></header>
+      <header><h2><span class="medalla m{{ forloop.counter }}" aria-hidden="true">{{ forloop.counter }}</span><span class="sr">{{ forloop.counter }}. </span>{{ r.instrumento.nombre }}</h2><span class="tag puntaje">Puntaje {{ r.puntaje }} de 100<i class="barra-puntaje" style="--p:{{ r.puntaje }}%" aria-hidden="true"></i></span></header>
       <ul class="razones">{% for t in r.razones %}<li>{{ t }}</li>{% endfor %}</ul>
       <p class="meta">Puntaje por partes: rentabilidad {{ r.desglose.rentabilidad }}, calce de riesgo con tu plazo {{ r.desglose.calce }}, liquidez {{ r.desglose.liquidez }}. Fuente: {{ r.instrumento.fuente }}.</p>
       <p><a class="btn sec" href="{{ r.url_ver }}"{% if r.seleccionada %} aria-current="true"{% endif %}>{% if r.seleccionada %}Viendo la proyección{% else %}Ver proyección de esta opción{% endif %}</a></p>
@@ -98,6 +130,145 @@
     </fieldset>
     <button type="submit">Ver mi recomendación</button>
   </form>
+{{ escala_riesgo|json_script:"escala-riesgo" }}
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/"}}
+</script>
+<script type="module">
+// Mini isla 3D del quiz: las 7 sucursales del mapa. Las que el servidor descartaría con tus respuestas
+// se hunden y se apagan; las que siguen en juego quedan arriba. Usa las mismas reglas que
+// motivos_descarte (vienen de la vista), así la isla nunca contradice el resultado.
+import * as THREE from "three";
+import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+
+const reglas = JSON.parse(document.getElementById("escala-riesgo")?.textContent || "null");
+const resumen = document.querySelector(".resumen"), form = document.getElementById("quiz-form");
+if (reglas && resumen && form) iniciar();
+
+function iniciar() {
+  const caja = document.createElement("div"); caja.className = "medidor";
+  caja.innerHTML = '<div class="medidor-3d" aria-hidden="true"></div>' +
+    '<p class="medidor-perfil" aria-live="polite"><span>Opciones que siguen en juego</span><strong></strong><small></small></p>';
+  resumen.prepend(caja);
+  const lienzo = caja.querySelector(".medidor-3d"), texto = caja.querySelector(".medidor-perfil");
+  const tipo = (n) => /APV/.test(n) ? "apv" : /Principal/.test(n) ? "fondo" : "banco";
+
+  // Mismas reglas que el servidor; una respuesta que falta no descarta nada todavía.
+  function estado() {
+    const f = new FormData(form), c = f.get("caida"), i = f.get("ingresos"), pz = f.get("plazo"), col = f.get("colchon");
+    const monto = parseInt(f.get("monto"), 10);
+    const tope = [c && reglas.caida[c], i && reglas.ingresos[i]].filter(Boolean);
+    const riesgoMax = tope.length ? Math.min(...tope) : 5;
+    const mesesMax = pz ? reglas.plazos[pz] : Infinity;
+    const vivos = reglas.inst.map((d) => !(
+      (monto >= 0 && monto < d.monto_min) || mesesMax <= d.plazo_min_meses || d.riesgo > riesgoMax ||
+      (d.exige_fondo_emergencia && col === "no")));
+    const respondidas = ["ingresos", "plazo", "caida", "colchon"].filter((k) => f.get(k)).length + (monto >= 0 ? 1 : 0);
+    const perfil = tope.length === 2 ? (riesgoMax <= 2 ? "Conservador" : riesgoMax >= 5 ? "Agresivo" : "Moderado") : null;
+    return { vivos, respondidas, perfil };
+  }
+  let previo = -1;
+  function rotular(e) {
+    const n = e.vivos.filter(Boolean).length;
+    texto.querySelector("strong").textContent = `${n} de 7`;
+    texto.querySelector("small").textContent = e.respondidas === 0 ? "Se van descartando a medida que respondes"
+      : e.perfil ? `Perfil ${e.perfil.toLowerCase()}` : "Sigue respondiendo";
+    if (n !== previo && previo >= 0) { texto.classList.remove("cambia"); void texto.offsetWidth; texto.classList.add("cambia"); }
+    previo = n;
+  }
+  rotular(estado());
+
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); } catch (e) {
+    lienzo.hidden = true; form.addEventListener("change", () => rotular(estado())); form.addEventListener("input", () => rotular(estado())); return;
+  }
+  const quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setClearColor(0x000000, 0);
+  renderer.toneMapping = THREE.NeutralToneMapping;
+  renderer.shadowMap.enabled = true;
+  renderer.debug.checkShaderErrors = false; // evita avisos del compilador de la GPU en la consola
+  lienzo.append(renderer.domElement);
+  const scene = new THREE.Scene();
+  scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+  scene.environmentIntensity = 0.4;
+  const sol = new THREE.DirectionalLight(0xffffff, 2.2); sol.position.set(-3, 6, 4); sol.castShadow = true;
+  sol.shadow.mapSize.set(1024, 1024); sol.shadow.radius = 5; Object.assign(sol.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4 });
+  scene.add(sol, new THREE.HemisphereLight(0xffffff, 0xd6dde6, 1.4));
+  const camara = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 50);
+  const mat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.75, ...extra });
+  const pieza = (w, h, d, m, r = 0.05) => { const o = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 3, Math.min(r, w / 2, h / 2, d / 2)), m); o.castShadow = o.receiveShadow = true; return o; };
+
+  const geoAgua = new THREE.RingGeometry(0.01, 4.2, 48, 14); geoAgua.rotateX(-Math.PI / 2);
+  const agua = new THREE.Mesh(geoAgua, mat(0xbcdcec, { roughness: 0.35, flatShading: true }));
+  agua.position.y = -0.22; agua.receiveShadow = true; scene.add(agua);
+  const aguaBase = geoAgua.attributes.position.array.slice();
+  function olas(t) { // olitas suaves alrededor de la mini isla
+    const a = geoAgua.attributes.position.array;
+    for (let k = 0; k < a.length; k += 3) a[k + 1] = Math.sin(aguaBase[k] * 1.6 + t * 1.6) * 0.035 + Math.cos(aguaBase[k + 2] * 1.9 + t * 1.2) * 0.03;
+    geoAgua.attributes.position.needsUpdate = true; geoAgua.computeVertexNormals();
+  }
+  const isla = pieza(5.4, 0.36, 3.4, mat(0xf4f6f8), 0.18); isla.position.y = -0.18; scene.add(isla);
+  const calle = pieza(5, 0.04, 0.42, mat(0xc9d0d9), 0.02); calle.position.y = 0.02; scene.add(calle);
+  // Mismos barrios que el mapa grande: bancos adelante a la izquierda, fondos atrás, pensión adelante a la derecha.
+  const PUESTOS = { banco: [[-1.9, 0.85], [-0.9, 0.85]], fondo: [[-1.8, -0.85], [-0.6, -0.85], [0.6, -0.85], [1.8, -0.85]], apv: [[1.3, 0.85]] };
+  const usados = { banco: 0, fondo: 0, apv: 0 };
+  const edificios = reglas.inst.map((d, k) => {
+    const t = tipo(d.nombre), [x, z] = PUESTOS[t][usados[t]++] || [0, 0];
+    const g = new THREE.Group(); g.position.set(x, 0, z);
+    const alto = t === "fondo" ? 0.95 + (k % 2) * 0.2 : t === "apv" ? 0.55 : 0.7;
+    const cuerpo = pieza(0.62, alto, 0.6, mat(0xffffff)); cuerpo.position.y = alto / 2;
+    const techo = t === "apv"
+      ? Object.assign(new THREE.Mesh(new THREE.ConeGeometry(0.5, 0.36, 4), mat(0x2b2f36)), { castShadow: true })
+      : pieza(0.68, 0.08, 0.66, mat(0xdfe4ea), 0.02);
+    techo.position.y = alto + (t === "apv" ? 0.18 : 0.04); if (t === "apv") techo.rotation.y = Math.PI / 4;
+    const marca = pieza(0.64, 0.07, 0.62, mat(0xf2b937, { roughness: 0.4, metalness: 0.3 }), 0.02); marca.position.y = alto * 0.78;
+    g.add(cuerpo, techo, marca); scene.add(g);
+    return { g, cuerpo, marca, escala: 1, vel: 0, objetivo: 1, apagado: 0 };
+  });
+
+  function medir() {
+    const w = lienzo.clientWidth, h = lienzo.clientHeight; if (!w || !h) return;
+    renderer.setSize(w, h, false);
+    camara.position.set(4, 5, 6); camara.lookAt(0, 0.3, 0); camara.updateMatrixWorld();
+    const inv = camara.matrixWorldInverse, v = new THREE.Vector3();
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (let k = 0; k < 8; k++) {
+      v.set(k & 1 ? 2.8 : -2.8, k & 2 ? 1.5 : -0.3, k & 4 ? 1.8 : -1.8).applyMatrix4(inv);
+      x0 = Math.min(x0, v.x); x1 = Math.max(x1, v.x); y0 = Math.min(y0, v.y); y1 = Math.max(y1, v.y);
+    }
+    let mw = (x1 - x0) / 2 * 1.05, mh = (y1 - y0) / 2 * 1.08; const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+    if (mw / mh > w / h) mh = mw / (w / h); else mw = mh * (w / h);
+    Object.assign(camara, { left: cx - mw, right: cx + mw, top: cy + mh, bottom: cy - mh }); camara.updateProjectionMatrix();
+  }
+  medir(); new ResizeObserver(medir).observe(lienzo);
+
+  const blanco = new THREE.Color(0xffffff), gris = new THREE.Color(0xc9ced6);
+  function actualizar() {
+    const e = estado(); rotular(e);
+    e.vivos.forEach((vivo, k) => { const ed = edificios[k]; if ((ed.objetivo === 1) !== vivo) ed.vel += vivo ? 2 : -1.5; ed.objetivo = vivo ? 1 : 0.18; });
+  }
+  form.addEventListener("change", actualizar); form.addEventListener("input", actualizar); actualizar();
+
+  let antes = performance.now(), mx = 0, giro = 0;
+  resumen.addEventListener("pointermove", (ev) => { const r = resumen.getBoundingClientRect(); mx = ((ev.clientX - r.left) / r.width - 0.5) * 2; });
+  resumen.addEventListener("pointerleave", () => { mx = 0; });
+  renderer.setAnimationLoop(() => {
+    const ahora = performance.now(), dt = Math.min(0.05, (ahora - antes) / 1000), t = ahora / 1000; antes = ahora;
+    edificios.forEach((ed) => {
+      if (quieto) ed.escala = ed.objetivo;
+      else { ed.vel += ((ed.objetivo - ed.escala) * 160 - ed.vel * 14) * dt; ed.escala += ed.vel * dt; } // resorte con rebote
+      ed.g.scale.y = Math.max(0.05, ed.escala);
+      const a = 1 - Math.min(1, Math.max(0, (1 - ed.escala) / 0.82));
+      ed.cuerpo.material.color.copy(gris).lerp(blanco, a);
+      ed.marca.visible = ed.escala > 0.6;
+    });
+    if (!quieto) { giro += ((Math.sin(t * 0.4) * 0.12 + mx * 0.25) - giro) * 0.06; scene.rotation.y = giro; scene.position.y = Math.sin(t * 1.2) * 0.03; olas(t); }
+    renderer.render(scene, camara);
+  });
+}
+</script>
   {% endif %}
 {% endblock %}
 {% block scripts %}
@@ -197,6 +368,7 @@
     atras.disabled = i === 0;
     sig.disabled = !respondido(pasos[i]);
     form.classList.toggle("ultimo", i === pasos.length - 1);
+    pilas.style.height = pasos[i].offsetHeight + "px";
     if (direccion) {
       var foco = pasos[i].querySelector("input:checked") || pasos[i].querySelector("input");
       if (foco) foco.focus({ preventScroll: true });
@@ -243,7 +415,7 @@
       var li = document.createElement("li");
       if (marcado || (numero && numero.value)) li.className = "hecho";
       if (k === actual) li.className += " ahora";
-      li.innerHTML = '<span class="ok" aria-hidden="true">✓</span><span></span>';
+      li.innerHTML = '<span class="ok" aria-hidden="true"></span><span></span>';
       li.lastChild.textContent = cortos[k] || "Pregunta " + (k + 1);
       var b = document.createElement("b"); b.textContent = txt; li.lastChild.appendChild(b);
       ol.appendChild(li);
@@ -254,6 +426,7 @@
   var irOriginal = ir;
   ir = function (i, d) { irOriginal(i, d); pintarResumen(); };
   ir(actual, 0);
+  addEventListener("resize", function () { pilas.style.height = pasos[actual].offsetHeight + "px"; });
 })();
 </script>
 {% endblock %}

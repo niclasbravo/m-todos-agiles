@@ -3,7 +3,8 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "solo-desarrollo-cambiar-en-produccion")
-DEBUG = os.environ.get("DJANGO_DEBUG", "True").lower() in ("1", "true", "yes")
+# Con una clave de producción, el modo debug queda apagado salvo que se pida explícitamente.
+DEBUG = os.environ.get("DJANGO_DEBUG", "False" if "DJANGO_SECRET_KEY" in os.environ else "True").lower() in ("1", "true", "yes")
 ALLOWED_HOSTS = [
     host.strip()
     for host in os.environ.get(
@@ -12,7 +13,11 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 INSTALLED_APPS = ["comparador", "django.contrib.staticfiles"]
-MIDDLEWARE = ["django.middleware.common.CommonMiddleware"]
+MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+]
 ROOT_URLCONF = "config.urls"
 TEMPLATES = [{
     "BACKEND": "django.template.backends.django.DjangoTemplates",
