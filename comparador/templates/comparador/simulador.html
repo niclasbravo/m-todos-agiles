@@ -4,7 +4,7 @@
   <p class="lead">Compara cuánto tendrías con cada opción disponible en Chile. Ingresa cuánto tienes, cuánto puedes aportar al mes y por cuánto tiempo.</p>
   <p class="lead">¿No sabes por dónde partir? <a href="{% url 'quiz' %}">Responde el quiz</a> y te mostramos hasta 3 opciones para empezar.</p>
   <p class="lead" id="perfil-guardado" hidden></p>
-  {% if filas %}{% include "comparador/_barrio3d.html" %}{% endif %}
+  {% if filas %}{% include "comparador/_frascos3d.html" %}{% endif %}
   <div class="grid">
     <form method="get">
       {{ form.non_field_errors }}

@@ -1,0 +1,369 @@
+<section class="frascos" id="frascos" aria-labelledby="frascos-titulo" hidden>
+  <div class="frascos-cab">
+    <h2 id="frascos-titulo">Tu frasco de ahorro</h2>
+    <p class="leyenda frascos-ley">
+      <span><i class="sw" style="background:#d7dbe0"></i>Monedas que pones tú</span>
+      <span><i class="sw" style="background:#f2c25a"></i>Monedas que gana tu plata</span>
+      <span><i class="sw" style="background:#e5484d"></i>Elástico: valor real, en pesos de hoy</span>
+    </p>
+  </div>
+  <div class="escena" id="escena" aria-hidden="true"></div>
+  <div class="tiempo">
+    <button type="button" class="play" id="play" aria-label="Reproducir el ahorro desde hoy">▶</button>
+    <label for="anio" class="anio-txt" id="anio-txt">Hoy</label>
+    <input type="range" id="anio" min="0" max="12" step="1" value="0">
+  </div>
+  <div class="ficha" id="ficha" aria-live="polite"></div>
+</section>
+<style>
+.frascos{background:#16120e;color:#f5f5f5;border:1px solid #2e2620;border-radius:12px;margin:0 0 28px;overflow:hidden}
+.frascos-cab{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px 20px;padding:20px 24px 0}
+.frascos h2{color:#f5f5f5;margin:0}
+.frascos-ley{margin:0;color:#c4b8aa}
+.escena{position:relative;height:460px;margin-top:8px;touch-action:pan-y;cursor:pointer}
+.escena canvas{display:block;width:100%;height:100%}
+.tiempo{display:flex;align-items:center;gap:14px;padding:12px 24px;border-top:1px solid #2e2620}
+.tiempo .play{width:44px;min-height:44px;padding:0;flex:none;background:#f5f5f5;color:#16120e;border:0;border-radius:6px;font-size:16px}
+.anio-txt{margin:0;color:#f5f5f5;font-size:14px;font-weight:600;min-width:84px;font-variant-numeric:tabular-nums}
+.tiempo input[type=range]{flex:1;height:44px;border:0;padding:0;background:transparent;accent-color:#f2c25a}
+.ficha{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px;border-top:1px solid #2e2620;padding:14px 24px 18px;font-size:13px;color:#c4b8aa;font-variant-numeric:tabular-nums;min-height:58px}
+.ficha strong{color:#f5f5f5;font-size:15px}
+.ficha .monto{color:#f2c25a;font-size:22px;font-weight:700}
+@media(max-width:600px){
+  .frascos{border-radius:8px}
+  .frascos-cab{padding:16px 16px 0}
+  .escena{height:380px}
+  .tiempo{padding:10px 16px}
+  .ficha{padding:12px 16px 16px;gap:2px 12px}
+}
+</style>
+{{ escena|json_script:"datos-frascos" }}
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/"}}
+</script>
+<script type="module">
+// Frascos de ahorro de vidrio sobre una mesa: cada instrumento es un frasco que se llena de monedas
+// (plateadas = lo que pones, doradas = la ganancia) y un elástico rojo marca el valor real.
+// Todo se dibuja en código; si WebGL o la librería no cargan, la sección queda oculta.
+import * as THREE from "three";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { BokehPass } from "three/addons/postprocessing/BokehPass.js";
+import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+
+const datos = JSON.parse(document.getElementById("datos-frascos")?.textContent || "null");
+const caja = document.getElementById("frascos");
+if (datos && datos.inst.length && caja) iniciar();
+
+function iniciar() {
+  const $ = (id) => document.getElementById(id);
+  const escena = $("escena"), ficha = $("ficha"), rango = $("anio"), anioTxt = $("anio-txt"), play = $("play");
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({ antialias: true }); } catch (e) { return; }
+  caja.hidden = false;
+  const quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 0.95;
+  renderer.shadowMap.enabled = true;
+  renderer.debug.checkShaderErrors = false; // evita avisos del compilador de la GPU en la consola
+  escena.append(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x16120e);
+  scene.fog = new THREE.Fog(0x16120e, 14, 30);
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.03).texture;
+  scene.environmentIntensity = 0.55;
+
+  const camara = new THREE.PerspectiveCamera(28, 1, 0.1, 80);
+
+  // Luz cálida de lámpara desde arriba a la izquierda, y un contraluz frío para recortar el vidrio.
+  const lampara = new THREE.SpotLight(0xffe2b8, 190, 30, 0.75, 0.7, 1.6);
+  lampara.position.set(-1.5, 8, 5);
+  lampara.castShadow = true;
+  lampara.shadow.mapSize.set(2048, 2048);
+  lampara.shadow.bias = -0.0004;
+  const contra = new THREE.DirectionalLight(0xbcd4ff, 1.4);
+  contra.position.set(4, 5, -8);
+  scene.add(lampara, lampara.target, contra);
+
+  // ---------- Texturas dibujadas en canvas ----------
+  function lienzo(w, h, dibujar, color = true, repetir = false) {
+    const c = document.createElement("canvas"); c.width = w; c.height = h;
+    dibujar(c.getContext("2d"), w, h);
+    const t = new THREE.CanvasTexture(c);
+    if (color) t.colorSpace = THREE.SRGBColorSpace;
+    if (repetir) t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    return t;
+  }
+  // Madera: tablones con vetas onduladas.
+  const madera = lienzo(1024, 512, (g, w, h) => {
+    const tablas = 5, alto = h / tablas;
+    for (let i = 0; i < tablas; i++) {
+      const tono = [[92, 58, 34], [104, 66, 38], [86, 54, 31], [98, 62, 36], [110, 70, 40]][i];
+      g.fillStyle = `rgb(${tono})`; g.fillRect(0, i * alto, w, alto);
+      for (let k = 0; k < 70; k++) {
+        const y0 = i * alto + Math.random() * alto, a = 0.04 + Math.random() * 0.1;
+        g.strokeStyle = `rgba(${Math.random() < 0.5 ? "40,22,10" : "150,100,60"},${a})`;
+        g.lineWidth = 0.6 + Math.random() * 1.8;
+        g.beginPath();
+        for (let x = 0; x <= w; x += 16) g.lineTo(x, y0 + Math.sin(x * 0.006 + k) * 5 + Math.sin(x * 0.03 + i) * 1.5);
+        g.stroke();
+      }
+      g.fillStyle = "rgba(20,10,4,0.55)"; g.fillRect(0, i * alto, w, 2);
+    }
+  }, true, true);
+  madera.repeat.set(3, 2);
+  // Canto estriado de la moneda (relieve).
+  const estrias = lienzo(512, 16, (g, w, h) => {
+    for (let x = 0; x < w; x += 4) { g.fillStyle = x % 8 ? "#fff" : "#000"; g.fillRect(x, 0, 4, h); }
+  }, false);
+  // Cara de la moneda: borde, anillo y signo $ en relieve.
+  const cara = lienzo(256, 256, (g, w) => {
+    const c = w / 2;
+    g.fillStyle = "#777"; g.fillRect(0, 0, w, w);
+    g.fillStyle = "#fff"; g.beginPath(); g.arc(c, c, c, 0, 7); g.fill();
+    g.fillStyle = "#666"; g.beginPath(); g.arc(c, c, c * 0.84, 0, 7); g.fill();
+    g.strokeStyle = "#bbb"; g.lineWidth = 5; g.beginPath(); g.arc(c, c, c * 0.72, 0, 7); g.stroke();
+    g.fillStyle = "#e6e6e6"; g.font = "bold 128px Georgia, serif"; g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillText("$", c, c + 6);
+  }, false);
+
+  // ---------- Mesa y pared ----------
+  const mesa = new THREE.Mesh(new THREE.BoxGeometry(40, 0.5, 14),
+    new THREE.MeshPhysicalMaterial({ map: madera, roughness: 0.55, clearcoat: 0.35, clearcoatRoughness: 0.4 }));
+  mesa.position.set(0, -0.25, 0); mesa.receiveShadow = true; scene.add(mesa);
+  const pared = new THREE.Mesh(new THREE.PlaneGeometry(60, 20), new THREE.MeshStandardMaterial({ color: 0x2a221b, roughness: 0.95 }));
+  pared.position.set(0, 6, -7); scene.add(pared);
+
+  // ---------- Frasco: perfil girado (fondo grueso, cuerpo, hombro, cuello con rosca) ----------
+  const R = 0.56, ALTO = 1.75;
+  const perfil = [
+    [0, 0], [R - 0.06, 0], [R, 0.05], [R, ALTO - 0.38], [R - 0.08, ALTO - 0.2],
+    [R - 0.16, ALTO - 0.14], [R - 0.16, ALTO - 0.02], [R - 0.13, ALTO], [R - 0.19, ALTO],
+  ].map(([x, y]) => new THREE.Vector2(x, y));
+  const geoFrasco = new THREE.LatheGeometry(perfil, 64);
+  const vidrio = new THREE.MeshPhysicalMaterial({
+    color: 0xf4fbff, metalness: 0, roughness: 0.04, transmission: 1, thickness: 0.18, ior: 1.5,
+    side: THREE.DoubleSide, specularIntensity: 1, envMapIntensity: 1.2,
+  });
+  const metalRosca = new THREE.MeshStandardMaterial({ color: 0xb9bcc2, metalness: 1, roughness: 0.3 });
+  const goma = new THREE.MeshStandardMaterial({ color: 0xe5484d, roughness: 0.6 });
+
+  const inst = datos.inst, n = inst.length, cortes = datos.meses.length;
+  const maximo = Math.max(...inst.map((d) => d.puntos[cortes - 1][1])) || 1;
+  const MAXC = 140, POR_CAPA = 7, CAPA = 0.066, MR = 0.15, MH = 0.034;
+
+  const frascos = inst.map((d, i) => {
+    const g = new THREE.Group();
+    const f = new THREE.Mesh(geoFrasco, vidrio); f.userData.i = i; f.renderOrder = 2;
+    const rosca = new THREE.Mesh(new THREE.TorusGeometry(R - 0.15, 0.022, 8, 48), metalRosca);
+    rosca.rotation.x = Math.PI / 2; rosca.position.y = ALTO - 0.08;
+    const elastico = new THREE.Mesh(new THREE.TorusGeometry(R + 0.012, 0.016, 10, 64), goma);
+    elastico.rotation.x = Math.PI / 2; elastico.castShadow = true;
+    // Etiqueta de papel pegada al frente.
+    const lc = document.createElement("canvas"); lc.width = 512; lc.height = 256;
+    const tex = new THREE.CanvasTexture(lc); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
+    const etiqueta = new THREE.Mesh(
+      new THREE.CylinderGeometry(R + 0.004, R + 0.004, 0.5, 48, 1, true, -0.75, 1.5),
+      new THREE.MeshStandardMaterial({ map: tex, color: 0xa89c88, roughness: 0.9 }));
+    etiqueta.position.y = 0.4;
+    g.add(f, rosca, elastico, etiqueta);
+    scene.add(g);
+    // Lugares de las monedas: capas apiladas con un poco de desorden.
+    const lugares = [];
+    for (let k = 0; k < MAXC; k++) {
+      const capa = Math.floor(k / POR_CAPA), j = k % POR_CAPA;
+      const ang = (j / POR_CAPA) * Math.PI * 2 + capa * 0.9 + Math.random() * 0.4;
+      const rad = j === 0 ? Math.random() * 0.05 : R - 0.06 - MR - Math.random() * 0.06;
+      lugares.push({
+        x: j === 0 ? 0 : Math.cos(ang) * rad, z: j === 0 ? 0 : Math.sin(ang) * rad,
+        y: 0.06 + MH / 2 + capa * CAPA + Math.random() * 0.012,
+        rx: (Math.random() - 0.5) * 0.5, rz: (Math.random() - 0.5) * 0.5, ry: Math.random() * 6.28,
+      });
+    }
+    return { g, f, elastico, etiqueta, lc, tex, lugares, aparicion: new Array(MAXC).fill(-1), visibles: 0, texto: "" };
+  });
+
+  // ---------- Monedas (instanciadas: canto estriado + caras con $) ----------
+  const geoMoneda = new THREE.CylinderGeometry(MR, MR, MH, 40);
+  const metal = (color, rough) => [
+    new THREE.MeshStandardMaterial({ color, metalness: 1, roughness: rough, bumpMap: estrias, bumpScale: 1.2 }),
+    new THREE.MeshStandardMaterial({ color, metalness: 1, roughness: rough * 0.9, bumpMap: cara, bumpScale: 2.2 }),
+    new THREE.MeshStandardMaterial({ color, metalness: 1, roughness: rough * 0.9, bumpMap: cara, bumpScale: 2.2 }),
+  ];
+  const mPlata = new THREE.InstancedMesh(geoMoneda, metal(0xd7dbe0, 0.26), n * MAXC);
+  const mOro = new THREE.InstancedMesh(geoMoneda, metal(0xf2c25a, 0.22), n * MAXC);
+  [mPlata, mOro].forEach((m) => { m.castShadow = true; m.receiveShadow = true; m.count = 0; scene.add(m); });
+
+  // ---------- Postprocesado: bloom suave y profundidad de campo ----------
+  const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 }));
+  composer.addPass(new RenderPass(scene, camara));
+  const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.22, 0.35, 0.97);
+  composer.addPass(bloom);
+  const bokeh = new BokehPass(scene, camara, { focus: 12, aperture: 0.0005, maxblur: 0.004 });
+  composer.addPass(bokeh);
+  composer.addPass(new OutputPass());
+
+  // ---------- Disposición y cámara ----------
+  const mirar = new THREE.Vector3();
+  let pos = [], dist = 12;
+  function ubicar() {
+    const w = escena.clientWidth, h = escena.clientHeight;
+    renderer.setSize(w, h, false);
+    composer.setSize(w, h);
+    camara.aspect = w / h;
+    const dosFilas = camara.aspect < 1.3, sep = 1.32;
+    const enFrente = dosFilas ? Math.ceil(n / 2) : n;
+    pos = inst.map((_, i) => {
+      const frente = i < enFrente, k = frente ? i : i - enFrente, cuantos = frente ? enFrente : n - enFrente;
+      return new THREE.Vector3((k - (cuantos - 1) / 2) * sep, 0, frente ? 0.9 * (dosFilas ? 1 : 0) : -0.9);
+    });
+    frascos.forEach((f, i) => f.g.position.copy(pos[i]));
+    const ancho = enFrente * sep + 0.1;
+    const vfov = THREE.MathUtils.degToRad(camara.fov);
+    const hfov = 2 * Math.atan(Math.tan(vfov / 2) * camara.aspect);
+    dist = Math.max((ancho / 2) / Math.tan(hfov / 2), (ALTO * (dosFilas ? 1.35 : 0.95)) / Math.tan(vfov / 2)) * 1.0;
+    mirar.set(0, ALTO * 0.5, 0);
+    camara.updateProjectionMatrix();
+    bokeh.enabled = w >= 600; // en el celular, sin desenfoque (rendimiento)
+    lampara.target.position.set(0, 0, 0);
+  }
+  ubicar();
+  new ResizeObserver(ubicar).observe(escena);
+
+  // ---------- Estado en el tiempo ----------
+  function valor(d, f) {
+    const a = Math.floor(f), b = Math.min(cortes - 1, a + 1), u = f - a;
+    return d.puntos[a].map((x, k) => x + (d.puntos[b][k] - x) * u);
+  }
+  function mesTxt(f) {
+    const a = Math.floor(f), b = Math.min(cortes - 1, a + 1);
+    const m = Math.round(datos.meses[a] + (datos.meses[b] - datos.meses[a]) * (f - a));
+    if (m === 0) return "Hoy";
+    const anios = Math.floor(m / 12), resto = m % 12;
+    return anios === 0 ? `${m} meses` : resto === 0 ? `Año ${anios}` : `Año ${anios}, mes ${resto}`;
+  }
+  let sel = inst.reduce((b, d, i) => (d.puntos[cortes - 1][1] > inst[b].puntos[cortes - 1][1] ? i : b), 0);
+  let momento = quieto ? cortes - 1 : 0;
+
+  function etiquetar(fr, d, i, nominal) {
+    const texto = `${d.nombre.split(" (")[0]}|${corto(nominal)}|${i === sel}`;
+    if (texto === fr.texto) return;
+    fr.texto = texto;
+    const g = fr.lc.getContext("2d"), w = fr.lc.width, h = fr.lc.height;
+    g.fillStyle = i === sel ? "#fbe7b0" : "#f1e6cf"; g.fillRect(0, 0, w, h);
+    g.strokeStyle = "#8a6d3b"; g.lineWidth = 6; g.strokeRect(14, 14, w - 28, h - 28);
+    g.fillStyle = "#2b2118"; g.textAlign = "center";
+    g.font = "600 40px Geist, system-ui, sans-serif";
+    let nombre = d.nombre.split(" (")[0];
+    while (g.measureText(nombre).width > w - 70 && nombre.length > 4) nombre = nombre.slice(0, -2) + "…";
+    g.fillText(nombre, w / 2, 98);
+    g.font = "700 64px Geist, system-ui, sans-serif";
+    g.fillText(corto(nominal), w / 2, 182);
+    fr.tex.needsUpdate = true;
+  }
+
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), s = new THREE.Vector3(1, 1, 1), p = new THREE.Vector3();
+  function construir(f, ahora) {
+    let np = 0, no = 0;
+    inst.forEach((d, i) => {
+      const fr = frascos[i];
+      const [aportado, nominal, real] = valor(d, f);
+      const total = Math.max(1, Math.round((nominal / maximo) * MAXC));
+      const base = Math.min(total, Math.max(1, Math.round((aportado / maximo) * MAXC)));
+      for (let k = fr.visibles; k < total; k++) fr.aparicion[k] = quieto ? -10 : ahora + (k - fr.visibles) * 0.03;
+      for (let k = total; k < fr.visibles; k++) fr.aparicion[k] = -1;
+      fr.visibles = total;
+      for (let k = 0; k < total; k++) {
+        const L = fr.lugares[k];
+        const u = Math.min(1, Math.max(0, (ahora - fr.aparicion[k]) / 0.45));
+        if (u <= 0) continue;
+        const caida = 1 - Math.pow(1 - u, 3);
+        p.set(pos[i].x + L.x, L.y + (1 - caida) * 2.4, pos[i].z + L.z);
+        e.set(L.rx * caida, L.ry + (1 - caida) * 4, L.rz * caida); q.setFromEuler(e);
+        m4.compose(p, q, s);
+        if (k < base) mPlata.setMatrixAt(np++, m4); else mOro.setMatrixAt(no++, m4);
+      }
+      const yReal = 0.06 + Math.min(ALTO - 0.45, (Math.max(real, 1) / maximo) * MAXC / POR_CAPA * CAPA);
+      fr.elastico.position.y = yReal;
+      etiquetar(fr, d, i, nominal);
+      d.ahora = { aportado, nominal, real };
+    });
+    mPlata.count = np; mOro.count = no;
+    mPlata.instanceMatrix.needsUpdate = true; mOro.instanceMatrix.needsUpdate = true;
+    anioTxt.textContent = mesTxt(f);
+  }
+
+  function mostrar() {
+    const d = inst[sel], a = d.ahora;
+    ficha.classList.add("cambia");
+    ficha.innerHTML = "";
+    const nom = document.createElement("strong"); nom.textContent = d.nombre;
+    const monto = document.createElement("span"); monto.className = "monto"; monto.textContent = clp(a.nominal);
+    const det = document.createElement("span");
+    det.textContent = `Pones ${clp(a.aportado)} · Ganancia ${clp(a.nominal - a.aportado)} · Valor real ${clp(a.real)} · Riesgo ${d.riesgo}`;
+    ficha.append(nom, monto, det);
+    requestAnimationFrame(() => ficha.classList.remove("cambia"));
+  }
+
+  // ---------- Tiempo: se reproduce al aparecer en pantalla; el deslizador va a cualquier año ----------
+  rango.max = cortes - 1;
+  let reproduciendo = false, t0 = 0;
+  const DURA = 5;
+  function reproducir() { if (quieto) return; reproduciendo = true; t0 = performance.now(); momento = 0; }
+  rango.addEventListener("input", () => { reproduciendo = false; momento = +rango.value; construir(momento, performance.now() / 1000); mostrar(); });
+  play.addEventListener("click", reproducir);
+  construir(momento, performance.now() / 1000);
+  rango.value = Math.round(momento);
+  mostrar();
+  new IntersectionObserver((ents, obs) => {
+    if (ents[0].isIntersecting) { reproducir(); obs.disconnect(); }
+  }, { threshold: 0.35 }).observe(escena);
+
+  // ---------- Puntero: elegir frasco y una leve parallax con resorte ----------
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+  let objX = 0, objY = 0, camX = 0, camY = 0, velX = 0, velY = 0;
+  function elegir(ev) {
+    const r = renderer.domElement.getBoundingClientRect();
+    ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+    objX = ndc.x; objY = ndc.y;
+    ray.setFromCamera(ndc, camara);
+    const hit = ray.intersectObjects(frascos.map((f) => f.f))[0];
+    if (hit && hit.object.userData.i !== sel) { sel = hit.object.userData.i; construir(momento, performance.now() / 1000); mostrar(); }
+  }
+  renderer.domElement.addEventListener("pointermove", elegir);
+  renderer.domElement.addEventListener("pointerdown", elegir);
+
+  let antes = performance.now(), ultimoMostrar = 0;
+  renderer.setAnimationLoop(() => {
+    const ahoraMs = performance.now(), ahora = ahoraMs / 1000, dt = Math.min(0.05, (ahoraMs - antes) / 1000); antes = ahoraMs;
+    if (reproduciendo) {
+      momento = Math.min(cortes - 1, ((ahoraMs - t0) / 1000 / DURA) * (cortes - 1));
+      rango.value = Math.round(momento);
+      if (momento >= cortes - 1) reproduciendo = false;
+      if (ahoraMs - ultimoMostrar > 120 || !reproduciendo) { ultimoMostrar = ahoraMs; construir(momento, ahora); mostrar(); }
+    }
+    construir(momento, ahora);
+    if (!quieto) { // resorte: sigue al puntero con algo de inercia
+      velX += ((objX - camX) * 40 - velX * 9) * dt; camX += velX * dt;
+      velY += ((objY - camY) * 40 - velY * 9) * dt; camY += velY * dt;
+    }
+    const ang = camX * 0.22;
+    camara.position.set(Math.sin(ang) * dist, mirar.y + dist * (0.2 - camY * 0.05), Math.cos(ang) * dist);
+    camara.lookAt(mirar);
+    bokeh.uniforms.focus.value = camara.position.distanceTo(mirar);
+    composer.render();
+  });
+}
+
+function clp(n) { return "$" + Math.round(n).toLocaleString("es-CL"); }
+function corto(n) {
+  return n >= 1e6 ? "$" + (n / 1e6).toFixed(1).replace(".", ",") + " M"
+    : "$" + Math.round(n / 1e3).toLocaleString("es-CL") + " mil";
+}
+</script>
