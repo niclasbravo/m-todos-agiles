@@ -135,131 +135,129 @@
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/"}}
 </script>
 <script type="module">
-// Medidor de riesgo 3D: la aguja se mueve con resorte según tus respuestas sobre ingresos y caídas.
-// Usa las mismas tablas que armar_perfil (vienen de la vista), así no se contradice con el resultado.
+// Mini isla 3D del quiz: las 7 sucursales del mapa. Las que el servidor descartaría con tus respuestas
+// se hunden y se apagan; las que siguen en juego quedan arriba. Usa las mismas reglas que
+// motivos_descarte (vienen de la vista), así la isla nunca contradice el resultado.
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
-const escala = JSON.parse(document.getElementById("escala-riesgo")?.textContent || "null");
+const reglas = JSON.parse(document.getElementById("escala-riesgo")?.textContent || "null");
 const resumen = document.querySelector(".resumen"), form = document.getElementById("quiz-form");
-if (escala && resumen && form) iniciar();
+if (reglas && resumen && form) iniciar();
 
 function iniciar() {
   const caja = document.createElement("div"); caja.className = "medidor";
   caja.innerHTML = '<div class="medidor-3d" aria-hidden="true"></div>' +
-    '<p class="medidor-perfil" aria-live="polite"><span>Tu perfil de riesgo</span><strong></strong><small></small></p>';
+    '<p class="medidor-perfil" aria-live="polite"><span>Opciones que siguen en juego</span><strong></strong><small></small></p>';
   resumen.prepend(caja);
   const lienzo = caja.querySelector(".medidor-3d"), texto = caja.querySelector(".medidor-perfil");
-  const NIVEL = { 1: "muy bajo", 2: "bajo", 3: "medio", 4: "medio-alto", 5: "alto" };
-  const GRIS = 0xe4e7ec, ORO = 0xf2b937; // misma paleta que el resto: grises y un solo acento dorado
+  const tipo = (n) => /APV/.test(n) ? "apv" : /Principal/.test(n) ? "fondo" : "banco";
 
-  function perfil() {
-    const f = new FormData(form), c = f.get("caida"), i = f.get("ingresos");
-    const v = [c && escala.caida[c], i && escala.ingresos[i]].filter(Boolean);
-    if (!v.length) return null;
-    const r = Math.min(...v);
-    return { r, nombre: r <= 2 ? "Conservador" : r >= 5 ? "Agresivo" : "Moderado", completo: v.length === 2 };
+  // Mismas reglas que el servidor; una respuesta que falta no descarta nada todavía.
+  function estado() {
+    const f = new FormData(form), c = f.get("caida"), i = f.get("ingresos"), pz = f.get("plazo"), col = f.get("colchon");
+    const monto = parseInt(f.get("monto"), 10);
+    const tope = [c && reglas.caida[c], i && reglas.ingresos[i]].filter(Boolean);
+    const riesgoMax = tope.length ? Math.min(...tope) : 5;
+    const mesesMax = pz ? reglas.plazos[pz] : Infinity;
+    const vivos = reglas.inst.map((d) => !(
+      (monto >= 0 && monto < d.monto_min) || mesesMax <= d.plazo_min_meses || d.riesgo > riesgoMax ||
+      (d.exige_fondo_emergencia && col === "no")));
+    const respondidas = ["ingresos", "plazo", "caida", "colchon"].filter((k) => f.get(k)).length + (monto >= 0 ? 1 : 0);
+    const perfil = tope.length === 2 ? (riesgoMax <= 2 ? "Conservador" : riesgoMax >= 5 ? "Agresivo" : "Moderado") : null;
+    return { vivos, respondidas, perfil };
   }
-  let ultimo = "";
-  function rotular(p) {
-    const nombre = p ? p.nombre : "Por definir";
-    texto.querySelector("strong").textContent = nombre;
-    texto.querySelector("small").textContent = p
-      ? `Riesgo máximo ${NIVEL[p.r]}${p.completo ? "" : " · falta una respuesta"}`
-      : "Se mueve con tus respuestas sobre ingresos y caídas";
-    if (nombre !== ultimo && ultimo) { texto.classList.remove("cambia"); void texto.offsetWidth; texto.classList.add("cambia"); }
-    ultimo = nombre;
+  let previo = -1;
+  function rotular(e) {
+    const n = e.vivos.filter(Boolean).length;
+    texto.querySelector("strong").textContent = `${n} de 7`;
+    texto.querySelector("small").textContent = e.respondidas === 0 ? "Se van descartando a medida que respondes"
+      : e.perfil ? `Perfil ${e.perfil.toLowerCase()}` : "Sigue respondiendo";
+    if (n !== previo && previo >= 0) { texto.classList.remove("cambia"); void texto.offsetWidth; texto.classList.add("cambia"); }
+    previo = n;
   }
-  rotular(perfil());
+  rotular(estado());
 
   let renderer;
   try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); } catch (e) {
-    lienzo.hidden = true; form.addEventListener("change", () => rotular(perfil())); return;
+    lienzo.hidden = true; form.addEventListener("change", () => rotular(estado())); form.addEventListener("input", () => rotular(estado())); return;
   }
   const quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   renderer.setClearColor(0x000000, 0);
   renderer.toneMapping = THREE.NeutralToneMapping;
-  renderer.debug.checkShaderErrors = false; // evita avisos del compilador de la GPU en la consola
   renderer.shadowMap.enabled = true;
+  renderer.debug.checkShaderErrors = false; // evita avisos del compilador de la GPU en la consola
   lienzo.append(renderer.domElement);
-
   const scene = new THREE.Scene();
   scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
-  scene.environmentIntensity = 0.6;
-  const luz = new THREE.DirectionalLight(0xffffff, 2.2); luz.position.set(-2, 5, 4); luz.castShadow = true;
-  luz.shadow.mapSize.set(1024, 1024); luz.shadow.radius = 6; Object.assign(luz.shadow.camera, { left: -3, right: 3, top: 3, bottom: -3 });
-  scene.add(luz, new THREE.HemisphereLight(0xffffff, 0xd6dde6, 1.1));
-  const suelo = new THREE.Mesh(new THREE.PlaneGeometry(12, 12), new THREE.ShadowMaterial({ opacity: 0.12 }));
-  suelo.rotation.x = -Math.PI / 2; suelo.position.y = -0.22; suelo.receiveShadow = true; scene.add(suelo);
-  const camara = new THREE.PerspectiveCamera(30, 1, 0.1, 50);
-  camara.position.set(0, 0.9, 6.2); camara.lookAt(0, 0.62, 0);
-
+  scene.environmentIntensity = 0.4;
+  const sol = new THREE.DirectionalLight(0xffffff, 2.2); sol.position.set(-3, 6, 4); sol.castShadow = true;
+  sol.shadow.mapSize.set(1024, 1024); sol.shadow.radius = 5; Object.assign(sol.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4 });
+  scene.add(sol, new THREE.HemisphereLight(0xffffff, 0xd6dde6, 1.4));
+  const camara = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 50);
   const mat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.75, ...extra });
-  const dial = new THREE.Group(); scene.add(dial);
-  const forma = new THREE.Shape(); forma.absarc(0, 0, 1.62, 0, Math.PI, false); forma.lineTo(1.62, 0);
-  const cara = new THREE.Mesh(new THREE.ExtrudeGeometry(forma, { depth: 0.16, bevelEnabled: true, bevelSize: 0.05, bevelThickness: 0.05, bevelSegments: 4, curveSegments: 48 }), mat(0xffffff));
-  cara.position.z = -0.3; cara.castShadow = cara.receiveShadow = true; dial.add(cara);
-  const base = new THREE.Mesh(new RoundedBoxGeometry(3.6, 0.2, 0.9, 3, 0.09), mat(0xf4f6f8)); base.castShadow = base.receiveShadow = true;
-  base.position.set(0, -0.1, -0.05); dial.add(base);
-  const tramos = [0, 1, 2, 3, 4].map((k) => {
-    const hueco = 0.07, largo = Math.PI / 5 - hueco;
-    const m = new THREE.Mesh(new THREE.TorusGeometry(1.3, 0.13, 16, 40, largo), mat(GRIS));
-    m.castShadow = true;
-    m.rotation.z = Math.PI - (k + 1) * (Math.PI / 5) + hueco / 2;
-    dial.add(m); return m;
+  const pieza = (w, h, d, m, r = 0.05) => { const o = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 3, Math.min(r, w / 2, h / 2, d / 2)), m); o.castShadow = o.receiveShadow = true; return o; };
+
+  const agua = new THREE.Mesh(new THREE.CircleGeometry(4.2, 48), mat(0xc4e0ee, { roughness: 0.35 }));
+  agua.rotation.x = -Math.PI / 2; agua.position.y = -0.22; agua.receiveShadow = true; scene.add(agua);
+  const isla = pieza(5.4, 0.36, 3.4, mat(0xf4f6f8), 0.18); isla.position.y = -0.18; scene.add(isla);
+  const calle = pieza(5, 0.04, 0.42, mat(0xc9d0d9), 0.02); calle.position.y = 0.02; scene.add(calle);
+  // Mismos barrios que el mapa grande: bancos adelante a la izquierda, fondos atrás, pensión adelante a la derecha.
+  const PUESTOS = { banco: [[-1.9, 0.85], [-0.9, 0.85]], fondo: [[-1.8, -0.85], [-0.6, -0.85], [0.6, -0.85], [1.8, -0.85]], apv: [[1.3, 0.85]] };
+  const usados = { banco: 0, fondo: 0, apv: 0 };
+  const edificios = reglas.inst.map((d, k) => {
+    const t = tipo(d.nombre), [x, z] = PUESTOS[t][usados[t]++] || [0, 0];
+    const g = new THREE.Group(); g.position.set(x, 0, z);
+    const alto = t === "fondo" ? 0.95 + (k % 2) * 0.2 : t === "apv" ? 0.55 : 0.7;
+    const cuerpo = pieza(0.62, alto, 0.6, mat(0xffffff)); cuerpo.position.y = alto / 2;
+    const techo = t === "apv"
+      ? Object.assign(new THREE.Mesh(new THREE.ConeGeometry(0.5, 0.36, 4), mat(0x2b2f36)), { castShadow: true })
+      : pieza(0.68, 0.08, 0.66, mat(0xdfe4ea), 0.02);
+    techo.position.y = alto + (t === "apv" ? 0.18 : 0.04); if (t === "apv") techo.rotation.y = Math.PI / 4;
+    const marca = pieza(0.64, 0.07, 0.62, mat(0xf2b937, { roughness: 0.4, metalness: 0.3 }), 0.02); marca.position.y = alto * 0.78;
+    g.add(cuerpo, techo, marca); scene.add(g);
+    return { g, cuerpo, marca, escala: 1, vel: 0, objetivo: 1, apagado: 0 };
   });
-  const aguja = new THREE.Group(); dial.add(aguja);
-  const punta = new THREE.Mesh(new THREE.ConeGeometry(0.07, 1.12, 16), mat(0x2b2f36)); punta.castShadow = true;
-  punta.position.y = 0.6; aguja.add(punta);
-  const eje = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.16, 32), mat(ORO, { roughness: 0.35, metalness: 0.55 })); eje.castShadow = true;
-  eje.rotation.x = Math.PI / 2; aguja.add(eje);
-  aguja.position.z = 0.05;
 
   function medir() {
-    const w = lienzo.clientWidth, h = lienzo.clientHeight;
-    if (!w || !h) return;
-    renderer.setSize(w, h, false); camara.aspect = w / h;
-    camara.fov = w / h < 1.4 ? 38 : 30; camara.updateProjectionMatrix();
+    const w = lienzo.clientWidth, h = lienzo.clientHeight; if (!w || !h) return;
+    renderer.setSize(w, h, false);
+    camara.position.set(4, 5, 6); camara.lookAt(0, 0.3, 0); camara.updateMatrixWorld();
+    const inv = camara.matrixWorldInverse, v = new THREE.Vector3();
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (let k = 0; k < 8; k++) {
+      v.set(k & 1 ? 2.8 : -2.8, k & 2 ? 1.5 : -0.3, k & 4 ? 1.8 : -1.8).applyMatrix4(inv);
+      x0 = Math.min(x0, v.x); x1 = Math.max(x1, v.x); y0 = Math.min(y0, v.y); y1 = Math.max(y1, v.y);
+    }
+    let mw = (x1 - x0) / 2 * 1.05, mh = (y1 - y0) / 2 * 1.08; const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+    if (mw / mh > w / h) mh = mw / (w / h); else mw = mh * (w / h);
+    Object.assign(camara, { left: cx - mw, right: cx + mw, top: cy + mh, bottom: cy - mh }); camara.updateProjectionMatrix();
   }
   medir(); new ResizeObserver(medir).observe(lienzo);
 
-  // Ángulo de la aguja: riesgo 1 a la izquierda, 5 a la derecha (aguja hacia arriba = riesgo 3).
-  const anguloDe = (r) => (3 - r) * (Math.PI / 5);
-  let objetivo = 0.35, angulo = 0.35, vel = 0, escalaObj = 1, esc = 1, vesc = 0, activo = -1;
+  const blanco = new THREE.Color(0xffffff), gris = new THREE.Color(0xc9ced6);
   function actualizar() {
-    const p = perfil(); rotular(p);
-    objetivo = p ? anguloDe(p.r) : 0.35;
-    const nuevo = p ? p.r - 1 : -1;
-    if (nuevo !== activo) { activo = nuevo; escalaObj = 1.07; setTimeout(() => (escalaObj = 1), 140); }
-    tramos.forEach((t, k) => t.material.color.setHex(k === activo ? ORO : GRIS));
-    tramos.forEach((t, k) => (t.scale.z = k === activo ? 1.35 : 1));
+    const e = estado(); rotular(e);
+    e.vivos.forEach((vivo, k) => { const ed = edificios[k]; if ((ed.objetivo === 1) !== vivo) ed.vel += vivo ? 2 : -1.5; ed.objetivo = vivo ? 1 : 0.18; });
   }
-  form.addEventListener("change", actualizar);
-  actualizar();
+  form.addEventListener("change", actualizar); form.addEventListener("input", actualizar); actualizar();
 
-  let mx = 0, my = 0;
-  resumen.addEventListener("pointermove", (ev) => {
-    const r = resumen.getBoundingClientRect();
-    mx = ((ev.clientX - r.left) / r.width - 0.5) * 2; my = ((ev.clientY - r.top) / r.height - 0.5) * 2;
-  });
-  resumen.addEventListener("pointerleave", () => { mx = 0; my = 0; });
-
-  let antes = performance.now();
+  let antes = performance.now(), mx = 0, giro = 0;
+  resumen.addEventListener("pointermove", (ev) => { const r = resumen.getBoundingClientRect(); mx = ((ev.clientX - r.left) / r.width - 0.5) * 2; });
+  resumen.addEventListener("pointerleave", () => { mx = 0; });
   renderer.setAnimationLoop(() => {
     const ahora = performance.now(), dt = Math.min(0.05, (ahora - antes) / 1000), t = ahora / 1000; antes = ahora;
-    if (quieto) { angulo = objetivo; esc = 1; }
-    else {
-      const meta = objetivo + (activo < 0 ? Math.sin(t * 1.4) * 0.12 : 0); // sin perfil, la aguja "busca"
-      vel += ((meta - angulo) * 95 - vel * 8.5) * dt; angulo += vel * dt;
-      vesc += ((escalaObj - esc) * 260 - vesc * 18) * dt; esc += vesc * dt;
-      dial.position.y = Math.sin(t * 1.3) * 0.05;
-      dial.rotation.y += ((Math.sin(t * 0.5) * 0.14 + mx * 0.3) - dial.rotation.y) * 0.08;
-      dial.rotation.x += ((-0.08 + my * 0.12) - dial.rotation.x) * 0.08;
-    }
-    aguja.rotation.z = angulo;
-    dial.scale.setScalar(esc);
+    edificios.forEach((ed) => {
+      if (quieto) ed.escala = ed.objetivo;
+      else { ed.vel += ((ed.objetivo - ed.escala) * 160 - ed.vel * 14) * dt; ed.escala += ed.vel * dt; } // resorte con rebote
+      ed.g.scale.y = Math.max(0.05, ed.escala);
+      const a = 1 - Math.min(1, Math.max(0, (1 - ed.escala) / 0.82));
+      ed.cuerpo.material.color.copy(gris).lerp(blanco, a);
+      ed.marca.visible = ed.escala > 0.6;
+    });
+    if (!quieto) { giro += ((Math.sin(t * 0.4) * 0.12 + mx * 0.25) - giro) * 0.06; scene.rotation.y = giro; scene.position.y = Math.sin(t * 1.2) * 0.03; }
     renderer.render(scene, camara);
   });
 }
