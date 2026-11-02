@@ -6,9 +6,9 @@
 .progreso{display:flex;align-items:center;gap:14px;margin:0 0 22px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
 .progreso .barra-p{flex:1;height:6px;border-radius:99px;background:var(--raised);overflow:hidden}
 .progreso .barra-p i{display:block;height:100%;width:0;border-radius:inherit;background:#d99a00;transition:width 320ms var(--ease-out)}
-.quiz.pasos .pilas{display:grid}
-.quiz.pasos fieldset{grid-area:1/1;margin:0;transition:opacity 260ms var(--ease-out),transform 260ms var(--ease-out)}
-.quiz.pasos fieldset[inert]{opacity:0;transform:translateX(var(--sale,40px));pointer-events:none}
+.quiz.pasos .pilas{position:relative;transition:height 260ms var(--ease-out)}
+.quiz.pasos fieldset{position:relative;margin:0;transition:opacity 260ms var(--ease-out),transform 260ms var(--ease-out)}
+.quiz.pasos fieldset[inert]{position:absolute;top:0;left:0;right:0;opacity:0;transform:translateX(var(--sale,40px));pointer-events:none}
 .quiz.pasos legend{font:700 clamp(22px,3vw,28px)/1.15 "Bricolage Grotesque",Geist,system-ui,sans-serif;letter-spacing:-.02em;margin-bottom:18px}
 .quiz.pasos .op{position:relative;min-height:56px;padding:14px 48px 14px 16px;border-radius:10px;margin-bottom:10px;font-size:16px;transition:border-color 150ms ease,background-color 150ms ease,transform 160ms var(--ease-out)}
 .quiz.pasos .op .tecla{position:absolute;right:14px;top:50%;transform:translateY(-50%);width:24px;height:24px;border:1px solid var(--border);border-radius:6px;display:grid;place-items:center;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
@@ -28,8 +28,21 @@
   .quiz.pasos{padding:20px 18px 18px;border-radius:12px}
   .quiz.pasos.ultimo>button[type=submit]{right:18px;bottom:18px}
   .ayuda-teclas{display:none}
+  .quiz.pasos legend{font-size:19px}
 }
 @media(prefers-reduced-motion:reduce){.quiz.pasos fieldset[inert]{transform:none}}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.rec h2{display:flex;align-items:center;gap:12px}
+.medalla{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font:800 17px/1 "Bricolage Grotesque",Geist,system-ui,sans-serif;color:#2b2118;
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.18),inset 0 2px 0 rgba(255,255,255,.45);animation:medalla 420ms var(--ease-out) both}
+.medalla.m1{background:#f2c14e}.medalla.m2{background:#cfd6de}.medalla.m3{background:#e0a46e}
+.rec:nth-of-type(2) .medalla{animation-delay:80ms}.rec:nth-of-type(3) .medalla{animation-delay:160ms}
+@keyframes medalla{from{opacity:0;transform:scale(.6) rotate(-20deg)}}
+.puntaje{display:flex;flex-direction:column;align-items:flex-end;gap:6px;font-variant-numeric:tabular-nums}
+.barra-puntaje{display:block;width:120px;height:6px;border-radius:99px;background:var(--raised);overflow:hidden}
+.barra-puntaje::after{content:"";display:block;height:100%;width:var(--p);border-radius:inherit;background:#d99a00;animation:llenar 700ms 200ms var(--ease-out) both}
+@keyframes llenar{from{width:0}}
+@media(prefers-reduced-motion:reduce){.medalla,.barra-puntaje::after{animation:none}}
 .quiz-grid{display:grid;grid-template-columns:minmax(0,680px) minmax(240px,320px);gap:28px;align-items:start}
 .resumen{position:sticky;top:24px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 22px}
 .resumen h2{font-size:16px;margin:0 0 12px}
@@ -38,7 +51,8 @@
 .resumen li:first-child{border-top:0}
 .resumen li b{display:block;color:var(--text);font-weight:600;font-size:14px;transition:opacity 200ms ease}
 .resumen .ok{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border);display:grid;place-items:center;font-size:12px;color:transparent;transition:background-color 200ms ease,border-color 200ms ease,transform 200ms var(--ease-out)}
-.resumen li.hecho .ok{background:#d99a00;border-color:#d99a00;color:#fff;transform:scale(1.05)}
+.resumen li.hecho .ok{background:#d99a00;border-color:#d99a00;transform:scale(1.05)}
+.resumen li.hecho .ok::after{content:"";width:5px;height:9px;border:solid #fff;border-width:0 2px 2px 0;transform:translateY(-1px) rotate(45deg)}
 .resumen li.ahora{color:var(--text)}
 @media(max-width:900px){.quiz-grid{grid-template-columns:1fr}.resumen{display:none}}
 </style>{% endblock %}
@@ -49,7 +63,7 @@
     <p class="lead">Tu perfil es <strong>{{ res.perfil.nombre|lower }}</strong>. Con {{ res.perfil.monto_fmt }} y un plazo de {{ res.perfil.plazo_txt|lower }}, estas son las opciones que mejor calzan, ordenadas por puntaje:</p>
     {% for r in res.recomendaciones %}
     <article class="fila rec{% if r.seleccionada %} sel{% endif %}">
-      <header><h2>{{ forloop.counter }}. {{ r.instrumento.nombre }}</h2><span class="tag">Puntaje {{ r.puntaje }} de 100</span></header>
+      <header><h2><span class="medalla m{{ forloop.counter }}" aria-hidden="true">{{ forloop.counter }}</span><span class="sr">{{ forloop.counter }}. </span>{{ r.instrumento.nombre }}</h2><span class="tag puntaje">Puntaje {{ r.puntaje }} de 100<i class="barra-puntaje" style="--p:{{ r.puntaje }}%" aria-hidden="true"></i></span></header>
       <ul class="razones">{% for t in r.razones %}<li>{{ t }}</li>{% endfor %}</ul>
       <p class="meta">Puntaje por partes: rentabilidad {{ r.desglose.rentabilidad }}, calce de riesgo con tu plazo {{ r.desglose.calce }}, liquidez {{ r.desglose.liquidez }}. Fuente: {{ r.instrumento.fuente }}.</p>
       <p><a class="btn sec" href="{{ r.url_ver }}"{% if r.seleccionada %} aria-current="true"{% endif %}>{% if r.seleccionada %}Viendo la proyección{% else %}Ver proyección de esta opción{% endif %}</a></p>
@@ -197,6 +211,7 @@
     atras.disabled = i === 0;
     sig.disabled = !respondido(pasos[i]);
     form.classList.toggle("ultimo", i === pasos.length - 1);
+    pilas.style.height = pasos[i].offsetHeight + "px";
     if (direccion) {
       var foco = pasos[i].querySelector("input:checked") || pasos[i].querySelector("input");
       if (foco) foco.focus({ preventScroll: true });
@@ -243,7 +258,7 @@
       var li = document.createElement("li");
       if (marcado || (numero && numero.value)) li.className = "hecho";
       if (k === actual) li.className += " ahora";
-      li.innerHTML = '<span class="ok" aria-hidden="true">✓</span><span></span>';
+      li.innerHTML = '<span class="ok" aria-hidden="true"></span><span></span>';
       li.lastChild.textContent = cortos[k] || "Pregunta " + (k + 1);
       var b = document.createElement("b"); b.textContent = txt; li.lastChild.appendChild(b);
       ol.appendChild(li);
@@ -254,6 +269,7 @@
   var irOriginal = ir;
   ir = function (i, d) { irOriginal(i, d); pintarResumen(); };
   ir(actual, 0);
+  addEventListener("resize", function () { pilas.style.height = pasos[actual].offsetHeight + "px"; });
 })();
 </script>
 {% endblock %}
