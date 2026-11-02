@@ -34,8 +34,8 @@
   </div>
 </section>
 <style>
-.hero{position:relative;width:100vw;margin:-24px 0 32px calc(50% - 50vw);height:max(620px,calc(100vh - 57px));background:#eef1f5;border-bottom:1px solid var(--border);overflow:hidden}
-@media(prefers-color-scheme:dark){.hero{background:#1a1c20}}
+.hero{position:relative;width:100vw;margin:-24px 0 32px calc(50% - 50vw);height:max(620px,calc(100vh - 57px));background:#c4e0ee;border-bottom:1px solid var(--border);overflow:hidden}
+
 .hero .escena{position:absolute;inset:0;touch-action:pan-y;cursor:pointer}
 .escena canvas{display:block;width:100%;height:100%}
 .tarjetas{position:absolute;inset:0;pointer-events:none}
@@ -253,6 +253,57 @@ function iniciar() {
   const plaza = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 0.06, 40), mat(0xd9ead0)); plaza.position.set(6.6, 0.05, 5.2); plaza.receiveShadow = true; scene.add(plaza);
   arbol(6.2, 5.1, 0.75); arbol(7.2, 5.4, 0.6);
 
+  // ---------- Mundo vivo: agua con olas, muelle, bote, gente y nubes ----------
+  const geoAgua = new THREE.PlaneGeometry(80, 56, 80, 56); geoAgua.rotateX(-Math.PI / 2);
+  const agua = new THREE.Mesh(geoAgua, mat(0xc4e0ee, { roughness: 0.3, metalness: 0.05 }));
+  agua.position.y = -0.34; agua.receiveShadow = true; scene.add(agua);
+  const aguaBase = geoAgua.attributes.position.array.slice();
+  const muelle = pieza(1, 0.12, 2.2, mat(0xc9a27a), 0.03); muelle.position.set(10.6, -0.12, 7.4); scene.add(muelle);
+  [[10.2, 6.6], [11, 6.6], [10.2, 8.3], [11, 8.3]].forEach(([x, z]) => { const p = pieza(0.1, 0.5, 0.1, mat(0x9c7a58), 0.02); p.position.set(x, -0.3, z); scene.add(p); });
+  const bote = new THREE.Group();
+  const casco = pieza(1.7, 0.36, 0.62, blanco, 0.14); casco.position.y = 0.12;
+  const cabina = pieza(0.6, 0.34, 0.46, blanco, 0.08); cabina.position.set(-0.25, 0.46, 0);
+  const vidrioB = pieza(0.62, 0.12, 0.48, vidrio, 0.03); vidrioB.position.set(-0.25, 0.52, 0);
+  const franjaB = pieza(1.72, 0.07, 0.64, mat(0xf2b937), 0.03); franjaB.position.y = 0.2;
+  bote.add(casco, cabina, vidrioB, franjaB); scene.add(bote);
+  const geoPersona = new THREE.CapsuleGeometry(0.075, 0.16, 4, 8);
+  const gente = new THREE.InstancedMesh(geoPersona, mat(0xffffff), 12);
+  gente.castShadow = true; scene.add(gente);
+  const caminantes = Array.from({ length: 12 }, (_, k) => ({
+    x: -11 + ((k * 1.93) % 22), z: k % 2 ? 0.86 : -0.86, dir: k % 3 ? 1 : -1, vel: 0.3 + (k % 4) * 0.08, fase: k,
+  }));
+  const tonosGente = [0x2b2f36, 0xe0773b, 0x2f6fde, 0x14a38b, 0xd99a00, 0x8a8f99];
+  caminantes.forEach((_, k) => gente.setColorAt(k, new THREE.Color(tonosGente[k % tonosGente.length])));
+  const nubes = [[-8, 6.4, -1.5], [6, 7, 2.5]].map(([x, y, z], k) => {
+    const g = new THREE.Group();
+    [[0, 0, 0, 0.9], [0.8, -0.1, 0.2, 0.7], [-0.8, -0.15, -0.1, 0.65], [0.2, 0.35, -0.2, 0.6]].forEach(([dx, dy, dz, r]) => {
+      const b = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), mat(0xffffff, { roughness: 1 }));
+      b.position.set(dx, dy, dz); b.castShadow = true; g.add(b);
+    });
+    g.position.set(x, y, z); g.userData = { vel: 0.25 + k * 0.1 }; scene.add(g); return g;
+  });
+  const mGente = new THREE.Matrix4(), pGente = new THREE.Vector3(), qGente = new THREE.Quaternion(), sGente = new THREE.Vector3(1, 1, 1);
+  function animarMundo(t, dt) {
+    if (!quieto) {
+      const a = geoAgua.attributes.position.array;
+      for (let k = 0; k < a.length; k += 3) {
+        const x = aguaBase[k], z = aguaBase[k + 2];
+        a[k + 1] = Math.sin(x * 0.45 + t * 1.1) * 0.05 + Math.cos(z * 0.6 + t * 0.8) * 0.04;
+      }
+      geoAgua.attributes.position.needsUpdate = true; geoAgua.computeVertexNormals();
+      nubes.forEach((n) => { n.position.x += n.userData.vel * dt; if (n.position.x > 16) n.position.x = -16; });
+    }
+    const bx = quieto ? 4 : ((t * 1.1) % 34) - 17;
+    bote.position.set(bx, -0.28 + Math.sin(t * 1.6) * 0.04, 8.1);
+    bote.rotation.z = Math.sin(t * 1.3) * 0.04; bote.rotation.x = Math.sin(t * 1.1) * 0.03;
+    caminantes.forEach((c, k) => {
+      if (!quieto) { c.x += c.dir * c.vel * dt; if (c.x > 11.4) c.x = -11.4; if (c.x < -11.4) c.x = 11.4; }
+      pGente.set(c.x, 0.2 + (quieto ? 0 : Math.abs(Math.sin(t * 7 + c.fase)) * 0.04), c.z);
+      mGente.compose(pGente, qGente, sGente); gente.setMatrixAt(k, mGente);
+    });
+    gente.instanceMatrix.needsUpdate = true;
+  }
+
   // Pallets instanciados: 3 x 3 por capa en el patio.
   const MAXP = 45, PP = 0.42, PH = 0.22;
   let maximo = Math.max(...inst.map((d) => d.puntos[cortes - 1][1])) || 1;
@@ -295,7 +346,7 @@ function iniciar() {
     const inv = camara.matrixWorldInverse, v = new THREE.Vector3();
     let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
     for (let k = 0; k < 8; k++) {
-      v.set(k & 1 ? 12.6 : -12.6, k & 2 ? 2.6 : -0.6, k & 4 ? 6.2 : -6.2).applyMatrix4(inv);
+      v.set(k & 1 ? 12.6 : -12.6, k & 2 ? 2.6 : -0.6, k & 4 ? 7.4 : -6.2).applyMatrix4(inv);
       x0 = Math.min(x0, v.x); x1 = Math.max(x1, v.x); y0 = Math.min(y0, v.y); y1 = Math.max(y1, v.y);
     }
     const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
@@ -603,6 +654,13 @@ function iniciar() {
     zonaCard.querySelectorAll("button[data-i]").forEach((b) => { b.lastChild.textContent = corto(inst[+b.dataset.i].ahora.nominal); });
   }
   navZonas.addEventListener("click", (ev) => { const b = ev.target.closest("button[data-zona]"); if (b) irZona(b.dataset.zona); });
+  // Las tarjetas del simulador pueden pedirle al mapa que enfoque una sucursal.
+  window.enfocarSucursal = (nombre) => {
+    const i = inst.findIndex((d) => d.nombre === nombre);
+    if (i < 0) return;
+    marcarZona(Object.keys(ZONAS).find((z) => ZONAS[z].tipo === tipo(nombre)) || "todo");
+    enfocar(i); enviar(i);
+  };
   // Etiquetas flotantes de cada barrio (solo en la vista general).
   const pinesDistrito = [["bancos", "Bancos"], ["fondos", "Fondos"], ["pension", "Pensión"]].map(([z, t]) => {
     const el = document.createElement("button"); el.type = "button"; el.className = "pin distrito"; el.textContent = t;
@@ -622,6 +680,7 @@ function iniciar() {
     }
     construir(momento, ms / 1000);
     moverEnvios(ms / 1000);
+    animarMundo(ms / 1000, dt);
     camiones.forEach((c) => {
       const u = c.userData;
       if (!quieto) { u.x += u.dir * u.vel * dt; if (u.x > 11) u.x = -11; if (u.x < -11) u.x = 11; }
