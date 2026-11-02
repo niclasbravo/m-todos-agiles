@@ -1,0 +1,249 @@
+<section class="monedas" id="monedas" aria-labelledby="monedas-titulo" hidden>
+  <div class="monedas-cab">
+    <h2 id="monedas-titulo">Tu plata, apilada</h2>
+    <p class="leyenda monedas-ley">
+      <span><i class="sw" style="background:#c9ccd2"></i>Lo que pones tú</span>
+      <span><i class="sw" style="background:#e0b347"></i>Ganancia</span>
+      <span><i class="sw" style="background:#ff6b5e"></i>Valor real, en pesos de hoy</span>
+    </p>
+  </div>
+  <div class="escena" id="escena" aria-hidden="true">
+    <div class="etiquetas" id="etiquetas"></div>
+  </div>
+  <div class="ficha" id="ficha" aria-live="polite"></div>
+</section>
+<style>
+.monedas{background:#0e0e10;color:#f5f5f5;border:1px solid #2a2a2e;border-radius:12px;margin:0 0 28px;overflow:hidden;position:relative}
+.monedas-cab{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px 20px;padding:20px 24px 0}
+.monedas h2{color:#f5f5f5;margin:0}
+.monedas-ley{margin:0;color:#b4b4b4}
+.escena{position:relative;height:420px;touch-action:pan-y;cursor:pointer}
+.escena canvas{display:block;width:100%;height:100%}
+.etiquetas{position:absolute;inset:0;pointer-events:none}
+.etq{position:absolute;transform:translate(-50%,-100%);font-size:13px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums;color:#f5f5f5;transition:opacity .2s}
+.etq.nom{transform:translate(-50%,8px);font-weight:400;font-size:12px;color:#b4b4b4;max-width:120px;overflow:hidden;text-overflow:ellipsis;text-align:center}
+.etq.on{color:#e0b347}
+.etq.nom.on{color:#f5f5f5}
+.ficha{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px;border-top:1px solid #2a2a2e;padding:14px 24px 18px;font-size:13px;color:#b4b4b4;font-variant-numeric:tabular-nums;min-height:58px}
+.ficha strong{color:#f5f5f5;font-size:15px}
+.ficha .monto{color:#e0b347;font-size:22px;font-weight:700}
+@media(max-width:600px){
+  .monedas{border-radius:8px}
+  .monedas-cab{padding:16px 16px 0}
+  .escena{height:340px}
+  .etq.nom{display:none}
+  .etq:not(.on){opacity:0!important}
+  .ficha{padding:12px 16px 16px;gap:2px 12px}
+}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/"}}
+</script>
+<script type="module">
+// Pilas de monedas en 3D con los montos del simulador. Lee los datos de cada .fila, así que no
+// cambia nada del servidor; si WebGL o la librería no cargan, la sección sigue oculta y quedan las barras.
+import * as THREE from "three";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+
+const filas = [...document.querySelectorAll(".fila[data-final]")];
+const caja = document.getElementById("monedas");
+const escena = document.getElementById("escena");
+const capa = document.getElementById("etiquetas");
+const ficha = document.getElementById("ficha");
+if (filas.length && caja) iniciar();
+
+function iniciar() {
+  const datos = filas.map((el) => ({
+    nombre: el.dataset.nombre, corto: el.dataset.nombre.split(" (")[0],
+    final: +el.dataset.final, aportado: +el.dataset.aportado, real: +el.dataset.real,
+    finalFmt: el.dataset.finalFmt, gananciaFmt: el.dataset.gananciaFmt, realFmt: el.dataset.realFmt,
+    riesgo: el.dataset.riesgo,
+  }));
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+  } catch (e) { return; }
+  caja.hidden = false;
+  const quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.shadowMap.enabled = true;
+  renderer.debug.checkShaderErrors = false; // evita avisos del compilador de la GPU en la consola
+  escena.prepend(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0e0e10);
+  scene.fog = new THREE.Fog(0x0e0e10, 18, 34);
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  scene.environmentIntensity = 0.9;
+
+  const camara = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
+  const luz = new THREE.DirectionalLight(0xffffff, 2.2);
+  luz.position.set(4, 9, 6);
+  luz.castShadow = true;
+  luz.shadow.mapSize.set(1024, 1024);
+  Object.assign(luz.shadow.camera, { left: -8, right: 8, top: 8, bottom: -8 });
+  scene.add(luz, new THREE.AmbientLight(0xffffff, 0.25));
+
+  const piso = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.ShadowMaterial({ opacity: 0.45 }));
+  piso.rotation.x = -Math.PI / 2;
+  piso.receiveShadow = true;
+  scene.add(piso);
+
+  // Cada moneda vale lo mismo en todas las pilas: la pila más alta tiene MAX monedas.
+  const MAX = 26, ALTO = 0.13, RADIO = 0.5;
+  const maximo = Math.max(...datos.map((d) => d.final)) || 1;
+  const geo = new THREE.CylinderGeometry(RADIO, RADIO, ALTO * 0.92, 48);
+  const plata = new THREE.MeshStandardMaterial({ color: 0xc9ccd2, metalness: 1, roughness: 0.28 });
+  const oro = new THREE.MeshStandardMaterial({ color: 0xe0b347, metalness: 1, roughness: 0.25 });
+  datos.forEach((d) => {
+    d.total = Math.max(1, Math.round((d.final / maximo) * MAX));
+    d.base = Math.min(d.total, Math.round((d.aportado / maximo) * MAX));
+  });
+  const nPlata = datos.reduce((s, d) => s + d.base, 0);
+  const nOro = datos.reduce((s, d) => s + d.total - d.base, 0);
+  const mPlata = new THREE.InstancedMesh(geo, plata, Math.max(nPlata, 1));
+  const mOro = new THREE.InstancedMesh(geo, oro, Math.max(nOro, 1));
+  [mPlata, mOro].forEach((m) => { m.castShadow = m.receiveShadow = true; m.count = 0; scene.add(m); });
+
+  const anillos = datos.map(() => {
+    const a = new THREE.Mesh(new THREE.TorusGeometry(RADIO + 0.12, 0.025, 8, 64),
+      new THREE.MeshBasicMaterial({ color: 0xff6b5e }));
+    a.rotation.x = Math.PI / 2;
+    scene.add(a);
+    return a;
+  });
+
+  // Monedas en orden de caída: de abajo hacia arriba, intercalando pilas.
+  const monedas = [];
+  datos.forEach((d, i) => { for (let k = 0; k < d.total; k++) monedas.push({ i, k, oro: k >= d.base }); });
+  monedas.sort((a, b) => a.k - b.k || a.i - b.i);
+  let iPlata = 0, iOro = 0;
+  monedas.forEach((m) => { m.idx = m.oro ? iOro++ : iPlata++; });
+  const duenoPlata = [], duenoOro = [];
+  monedas.forEach((m) => { (m.oro ? duenoOro : duenoPlata)[m.idx] = m.i; });
+
+  const etqMonto = [], etqNombre = [];
+  datos.forEach((d) => {
+    const a = document.createElement("div"); a.className = "etq"; a.textContent = corto(d.final);
+    const b = document.createElement("div"); b.className = "etq nom"; b.textContent = d.corto;
+    capa.append(a, b); etqMonto.push(a); etqNombre.push(b);
+  });
+
+  let pos = [];
+  const mirar = new THREE.Vector3();
+  function ubicar() {
+    const w = escena.clientWidth, h = escena.clientHeight;
+    renderer.setSize(w, h, false);
+    camara.aspect = w / h;
+    const dosFilas = camara.aspect < 1.3;
+    const n = datos.length, sep = 1.55;
+    pos = datos.map((_, i) => {
+      if (!dosFilas) return new THREE.Vector3((i - (n - 1) / 2) * sep, 0, 0);
+      const frente = i < Math.ceil(n / 2), fila = frente ? i : i - Math.ceil(n / 2);
+      const enFila = frente ? Math.ceil(n / 2) : Math.floor(n / 2);
+      return new THREE.Vector3((fila - (enFila - 1) / 2) * 1.35, 0, frente ? 1.3 : -1.3);
+    });
+    const ancho = dosFilas ? Math.ceil(n / 2) * 1.35 + 0.6 : n * sep + 0.4;
+    const altoMax = MAX * ALTO;
+    mirar.set(0, altoMax * 0.45, 0);
+    const vfov = THREE.MathUtils.degToRad(camara.fov);
+    const hfov = 2 * Math.atan(Math.tan(vfov / 2) * camara.aspect);
+    const dist = Math.max((ancho / 2) / Math.tan(hfov / 2), (altoMax * 0.75) / Math.tan(vfov / 2)) * 1.12;
+    camara.userData.dist = dist;
+    camara.userData.alto = dosFilas ? 0.55 : 0.3;
+    camara.updateProjectionMatrix();
+    anillos.forEach((a, i) => {
+      const d = datos[i];
+      a.position.set(pos[i].x, Math.max(ALTO, (d.real / maximo) * MAX * ALTO), pos[i].z);
+    });
+  }
+  ubicar();
+  new ResizeObserver(ubicar).observe(escena);
+
+  const mat = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(1, 1, 1), p = new THREE.Vector3();
+  const blanco = new THREE.Color(1, 1, 1), brillo = new THREE.Color(1.35, 1.3, 1.2);
+  let sel = datos.reduce((b, d, i) => (d.final > datos[b].final ? i : b), 0);
+  const t0 = performance.now();
+  const CAIDA = 0.55, PASO = 0.018;
+
+  function colocar(t) {
+    let vPlata = 0, vOro = 0;
+    monedas.forEach((m, n) => {
+      const inicio = n * PASO, avance = quieto ? 1 : Math.min(1, Math.max(0, (t - inicio) / CAIDA));
+      if (avance <= 0) return;
+      const caida = 1 - Math.pow(1 - avance, 3);
+      const yFinal = ALTO / 2 + m.k * ALTO;
+      p.set(pos[m.i].x, yFinal + (1 - caida) * 6, pos[m.i].z);
+      q.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, m.k * 0.7 + (1 - caida) * 3);
+      mat.compose(p, q, s);
+      const malla = m.oro ? mOro : mPlata;
+      malla.setMatrixAt(m.idx, mat);
+      malla.setColorAt(m.idx, m.i === sel ? brillo : blanco);
+      if (m.oro) vOro = Math.max(vOro, m.idx + 1); else vPlata = Math.max(vPlata, m.idx + 1);
+    });
+    mPlata.count = vPlata; mOro.count = vOro;
+    [mPlata, mOro].forEach((m) => {
+      m.instanceMatrix.needsUpdate = true;
+      if (m.instanceColor) m.instanceColor.needsUpdate = true;
+    });
+    return monedas.length * PASO + CAIDA;
+  }
+
+  function mostrar(i) {
+    sel = i;
+    const d = datos[i];
+    ficha.innerHTML = "";
+    const n = document.createElement("strong"); n.textContent = d.nombre;
+    const m = document.createElement("span"); m.className = "monto"; m.textContent = d.finalFmt;
+    const r = document.createElement("span");
+    r.textContent = `Ganancia ${d.gananciaFmt} · Valor real ${d.realFmt} · Riesgo ${d.riesgo}`;
+    ficha.append(n, m, r);
+    etqMonto.forEach((e, k) => e.classList.toggle("on", k === i));
+    etqNombre.forEach((e, k) => e.classList.toggle("on", k === i));
+  }
+  mostrar(sel);
+
+  // Puntero: inclina la cámara y elige la pila bajo el cursor (o el dedo).
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+  let objX = 0, objY = 0, camX = 0, camY = 0;
+  function elegir(ev) {
+    const r = renderer.domElement.getBoundingClientRect();
+    ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+    objX = ndc.x; objY = ndc.y;
+    ray.setFromCamera(ndc, camara);
+    const hit = ray.intersectObjects([mPlata, mOro])[0];
+    if (hit) mostrar((hit.object === mOro ? duenoOro : duenoPlata)[hit.instanceId]);
+  }
+  renderer.domElement.addEventListener("pointermove", elegir);
+  renderer.domElement.addEventListener("pointerdown", elegir);
+
+  const v = new THREE.Vector3();
+  renderer.setAnimationLoop(() => {
+    const t = (performance.now() - t0) / 1000;
+    const fin = colocar(t);
+    if (!quieto) { camX += (objX - camX) * 0.05; camY += (objY - camY) * 0.05; }
+    const dist = camara.userData.dist, ang = camX * 0.35 + (quieto ? 0 : Math.sin(t * 0.25) * 0.06);
+    camara.position.set(Math.sin(ang) * dist, dist * (camara.userData.alto - camY * 0.08), Math.cos(ang) * dist);
+    camara.lookAt(mirar);
+    renderer.render(scene, camara);
+    const w = escena.clientWidth, h = escena.clientHeight;
+    datos.forEach((d, i) => {
+      v.set(pos[i].x, d.total * ALTO + 0.15, pos[i].z).project(camara);
+      etqMonto[i].style.left = ((v.x + 1) / 2) * w + "px";
+      etqMonto[i].style.top = ((1 - v.y) / 2) * h + "px";
+      etqMonto[i].style.opacity = t > fin - 0.3 ? 1 : 0;
+      v.set(pos[i].x, 0, pos[i].z + RADIO).project(camara);
+      etqNombre[i].style.left = ((v.x + 1) / 2) * w + "px";
+      etqNombre[i].style.top = ((1 - v.y) / 2) * h + "px";
+    });
+  });
+}
+
+function corto(n) {
+  return n >= 1e6 ? "$" + (n / 1e6).toFixed(1).replace(".", ",") + " M"
+    : "$" + Math.round(n / 1e3).toLocaleString("es-CL") + " mil";
+}
+</script>
