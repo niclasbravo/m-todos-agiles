@@ -3,22 +3,40 @@ from urllib.parse import urlencode
 from django.shortcuts import render
 
 from .forms import AjusteProyeccionForm, QuizForm, SimuladorForm
-from .instruments import INFLACION_DEFECTO, comparar, sin_invertir
+from .instruments import INFLACION_DEFECTO, aporte_minimo, comparar, sin_invertir, trayectoria
 from .proyeccion import armar_proyeccion
 from .recomendador import recomendar
+
+
+def barrio(filas, d, cortes=12):
+    """Evolución de cada instrumento en ~12 momentos, para la escena 3D del simulador.
+
+    Usa la misma trayectoria que el cálculo principal, así el último corte coincide con las barras.
+    """
+    meses = d["meses"]
+    marcas = sorted({round(meses * k / cortes) for k in range(cortes + 1)})
+    inst = []
+    for f in filas:
+        t = trayectoria(d["inicial"], d["aporte"], meses, f["tasa"], d["inflacion"],
+                        apv=f.get("apv", False), aporte_min=aporte_minimo(f))
+        inst.append({"nombre": f["nombre"], "riesgo": f["riesgo_txt"],
+                     "puntos": [[round(t[m]["aportado"]), round(t[m]["nominal"]), round(t[m]["real"])] for m in marcas]})
+    return {"meses": marcas, "inst": inst}
 
 
 def simulador(request):
     # Valores por defecto para lo que no venga en la URL: así siempre se muestra algo útil.
     por_defecto = {n: f.initial for n, f in SimuladorForm.base_fields.items()}
     form = SimuladorForm({**por_defecto, **request.GET.dict()}, label_suffix="")
-    filas = d = nada = None
+    filas = d = nada = escena = None
     if form.is_valid():
         d = form.cleaned_data
         filas = comparar(d["inicial"], d["aporte"], d["meses"], d["inflacion"])
         nada = sin_invertir(d["inicial"], d["aporte"], d["meses"], d["inflacion"])
+        escena = barrio(filas, d)
     return render(request, "comparador/simulador.html", {
-        "form": form, "filas": filas, "d": d, "nada": nada, "destacar": request.GET.getlist("destacar")})
+        "form": form, "filas": filas, "d": d, "nada": nada, "escena": escena,
+        "destacar": request.GET.getlist("destacar")})
 
 
 def quiz(request):

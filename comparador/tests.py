@@ -134,6 +134,15 @@ class Simulador(SimpleTestCase):
         r = self.client.get("/?destacar=APV%20r%C3%A9gimen%20A&destacar=Cuenta%20Vista%20M%C3%A1s%20(Banco%20Consorcio)")
         self.assertContains(r, "Recomendada para ti", count=2)
 
+    def test_barrio_3d_termina_en_los_mismos_montos_que_las_barras(self):
+        r = self.client.get("/", {"inicial": 1_000_000, "aporte": 100_000, "plazo": 5, "unidad": "anios", "inflacion": 3})
+        escena, filas = r.context["escena"], r.context["filas"]
+        self.assertEqual((escena["meses"][0], escena["meses"][-1]), (0, 60))
+        for inst, f in zip(escena["inst"], filas):
+            self.assertEqual(inst["puntos"][-1][1], round(f["final"]))
+            self.assertEqual(inst["puntos"][-1][2], round(f["real"]))
+        self.assertContains(r, 'id="datos-barrio"')
+
 
 class Quiz(SimpleTestCase):
     RESP = {"monto": 3000000, "ingresos": "bajos", "plazo": "1_3a", "caida": "vender", "colchon": "no"}
