@@ -147,6 +147,35 @@ main.wrap:has(.quiz),main.wrap:has(.reco){max-width:1120px}
 .nada .barra{display:none}
 @media(max-width:600px){.nada-col strong{font-size:21px}.nada-comp{gap:10px}.nada-flecha{width:16px}}
 @media(prefers-reduced-motion:reduce){.billete.chico{animation:none}.tarjetas-sim .fila{transition:none}}
+/* Tarjetas con categoría, mini gráfico y botón al mapa. */
+.tarjeta{--cat:#2f6fde;position:relative;overflow:hidden}
+.tarjeta.cat-fondo{--cat:#14a38b}.tarjeta.cat-apv{--cat:#e0773b}
+.tarjeta::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:var(--cat)}
+.categoria{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;padding:3px 9px 3px 7px;border-radius:99px;font-size:11px;font-weight:700;color:var(--cat);background:color-mix(in srgb,var(--cat) 12%,var(--surface))}
+.categoria svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+svg.mini{display:block;width:100%;height:52px;overflow:visible}
+.mini-area{fill:color-mix(in srgb,#f2b937 18%,transparent);stroke:none}
+.mini-pones{fill:none;stroke:var(--data-grey);stroke-width:1.5;stroke-dasharray:4 4;vector-effect:non-scaling-stroke}
+.mini-tienes{fill:none;stroke:#d99a00;stroke-width:2.2;vector-effect:non-scaling-stroke}
+.por-ver svg.mini{clip-path:inset(0 100% 0 0)}
+.por-ver.visto svg.mini{clip-path:inset(0 0 0 0);transition:clip-path 1100ms var(--ease-out) calc(var(--retraso,0ms) + 250ms)}
+.pie-tarjeta{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-top:auto}
+.pie-tarjeta .detalle{margin:0;order:-1}
+.ver-mapa{width:auto;min-height:32px;padding:6px 12px;font-size:12px;background:transparent;color:var(--text);border:1px solid var(--control);border-radius:99px}
+@media(hover:hover) and (pointer:fine){.ver-mapa:hover{background:var(--text);color:var(--surface);border-color:var(--text)}}
+.tarjetas-sim .fila.destacada{border-color:var(--cat)}
+.tarjetas-sim .fila.destacada .insignia{background:var(--cat)}
+/* Revelado al hacer scroll (solo con JavaScript: la clase .por-ver la pone el script). */
+.por-ver{opacity:0;transform:translateY(18px)}
+.por-ver.visto{opacity:1;transform:none;transition:opacity 500ms var(--ease-out) var(--retraso,0ms),transform 500ms var(--ease-out) var(--retraso,0ms)}
+.por-ver .barra span,.por-ver .barra i{transform:scaleX(0);transform-origin:left center}
+.por-ver.visto .barra span{transform:none;transition:transform 900ms var(--ease-out) calc(var(--retraso,0ms) + 200ms)}
+.por-ver .barra i{opacity:0}
+.por-ver.visto .barra i{opacity:1;transform:none;transition:opacity 300ms ease calc(var(--retraso,0ms) + 900ms)}
+.por-ver .billete.chico{animation-play-state:paused}
+.por-ver.visto .billete.chico{animation-play-state:running}
+.tarjetas-sim .fila.por-ver{animation:none}
+@media(prefers-reduced-motion:reduce){.por-ver,.por-ver .barra span,.por-ver .barra i{opacity:1;transform:none}}
 /* Movimiento: curvas propias, respuesta al presionar y entradas cortas (sin animar lo que se usa a cada rato). */
 :root{--ease-out:cubic-bezier(.23,1,.32,1)}
 button,a.btn,button.link,.tiempo .play{transition:transform 160ms var(--ease-out),background-color 160ms ease,border-color 160ms ease}
