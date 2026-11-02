@@ -40,31 +40,26 @@ source venv/bin/activate
 
 ## Desplegar en PythonAnywhere
 
-Pasos para el plan gratuito. Reemplaza `<usuario>` por tu usuario de PythonAnywhere.
+La app está publicada en **https://dondeahorro.pythonanywhere.com** (plan gratuito). Para replicarla en otra cuenta, reemplaza `<usuario>` por tu usuario de PythonAnywhere.
 
-1. Abre una consola Bash y clona el repositorio:
+1. Abre una consola Bash, clona el repositorio, crea el entorno e instala las dependencias:
 
    ```bash
    git clone https://github.com/niclasbravo/m-todos-agiles.git
    cd m-todos-agiles
+   python3.13 -m venv ~/.virtualenvs/ahorro-venv
+   ~/.virtualenvs/ahorro-venv/bin/pip install -r requirements.txt
    ```
 
-2. Crea el entorno e instala las dependencias:
+2. Genera la clave secreta en un archivo que solo tu usuario puede leer (nunca se sube al repo ni se escribe en el WSGI):
 
    ```bash
-   mkvirtualenv --python=/usr/bin/python3.10 ahorro-venv
-   pip install -r requirements.txt
+   (umask 077; python3 -c "import secrets; print(secrets.token_urlsafe(50))" > ~/.django_secret)
    ```
 
-3. En la pestaña Web, selecciona **Add a new web app → Manual configuration → Python 3.10**. Configura **Source code** como `/home/<usuario>/m-todos-agiles` y **Virtualenv** como `/home/<usuario>/.virtualenvs/ahorro-venv`.
+3. En la pestaña **Web**, elige **Add a new web app → Manual configuration → Python 3.13**. Configura **Source code** como `/home/<usuario>/m-todos-agiles`, **Virtualenv** como `/home/<usuario>/.virtualenvs/ahorro-venv` y activa **Force HTTPS**.
 
-4. Genera una clave secreta en la consola:
-
-   ```bash
-   python -c "import secrets; print(secrets.token_urlsafe(50))"
-   ```
-
-   Edita el archivo WSGI `/var/www/<usuario>_pythonanywhere_com_wsgi.py` desde la pestaña Web y reemplaza su contenido por lo siguiente, sustituyendo también `<clave-generada>` por el valor obtenido:
+4. Reemplaza el contenido del archivo WSGI `/var/www/<usuario>_pythonanywhere_com_wsgi.py` por:
 
    ```python
    import os
@@ -75,37 +70,27 @@ Pasos para el plan gratuito. Reemplaza `<usuario>` por tu usuario de PythonAnywh
        sys.path.insert(0, ruta_proyecto)
 
    os.environ["DJANGO_SETTINGS_MODULE"] = "config.settings"
-   os.environ["DJANGO_SECRET_KEY"] = "<clave-generada>"
+   # La clave vive en un archivo privado del servidor (permisos 600), nunca en el repo.
+   with open("/home/<usuario>/.django_secret") as archivo:
+       os.environ["DJANGO_SECRET_KEY"] = archivo.read().strip()
    os.environ["DJANGO_DEBUG"] = "False"
    os.environ["DJANGO_ALLOWED_HOSTS"] = "<usuario>.pythonanywhere.com"
 
    from django.core.wsgi import get_wsgi_application
-
    application = get_wsgi_application()
    ```
 
-   En el plan gratuito, las variables de entorno de la aplicación se definen en este archivo WSGI.
+   En el plan gratuito, las variables de entorno se definen en este archivo. Aunque faltara `DJANGO_DEBUG`, el modo debug queda apagado cuando existe `DJANGO_SECRET_KEY`.
 
-5. En la consola Bash, activa el entorno y recopila los archivos estáticos desde el proyecto:
+5. Pulsa **Reload** y abre `https://<usuario>.pythonanywhere.com`. La app no tiene archivos estáticos propios (el 3D se carga desde un CDN), así que no hace falta configurar *Static files*.
 
-   ```bash
-   workon ahorro-venv
-   cd /home/<usuario>/m-todos-agiles
-   python manage.py collectstatic --noinput
-   ```
-
-6. En **Web → Static files**, configura la URL `/static/` con el directorio `/home/<usuario>/m-todos-agiles/staticfiles`.
-
-7. Pulsa **Reload** y abre `https://<usuario>.pythonanywhere.com`.
-
-8. Para actualizar después, ejecuta lo siguiente y pulsa **Reload** en la pestaña Web:
+6. Para actualizar después de un cambio en `main`:
 
    ```bash
-   workon ahorro-venv
-   cd /home/<usuario>/m-todos-agiles
-   git pull
-   python manage.py collectstatic --noinput
+   cd ~/m-todos-agiles && git pull
    ```
+
+   y pulsa **Reload** en la pestaña Web. El plan gratuito pide entrar una vez al mes y pulsar **Run until 1 month from today** para que el sitio siga activo.
 
 ## Funcionalidades
  
