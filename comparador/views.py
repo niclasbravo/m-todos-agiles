@@ -4,9 +4,9 @@ from django.http import JsonResponse
 from django.shortcuts import render
 
 from .forms import AjusteProyeccionForm, QuizForm, SimuladorForm
-from .instruments import INFLACION_DEFECTO, aporte_minimo, comparar, sin_invertir, trayectoria
+from .instruments import INFLACION_DEFECTO, INSTRUMENTOS, aporte_minimo, comparar, sin_invertir, trayectoria
 from .proyeccion import armar_proyeccion
-from .recomendador import recomendar
+from .recomendador import CAPACIDAD_INGRESOS, PLAZOS, TOLERANCIA_CAIDA, recomendar
 
 
 def barrio(filas, d, cortes=12):
@@ -73,4 +73,11 @@ def quiz(request):
         nada = sin_invertir(respuestas["monto"], 0, res["perfil"]["meses_ref"], INFLACION_DEFECTO)
     return render(request, "comparador/quiz.html", {
         "form": form, "res": res, "respuestas": respuestas, "sim_qs": sim_qs,
-        "proy": proy, "ajuste": ajuste, "ocultos": ocultos, "nada": nada})
+        "proy": proy, "ajuste": ajuste, "ocultos": ocultos, "nada": nada,
+        # Las mismas tablas que usa armar_perfil, para que el medidor del quiz no se contradiga con el resultado.
+        "escala_riesgo": {
+            "caida": TOLERANCIA_CAIDA, "ingresos": CAPACIDAD_INGRESOS,
+            "plazos": {pid: meses_max for pid, _, meses_max, _ in PLAZOS},
+            "inst": [{"nombre": i["nombre"], "riesgo": i["riesgo"], "plazo_min_meses": i["plazo_min_meses"],
+                      "monto_min": i["monto_min"], "exige_fondo_emergencia": i["exige_fondo_emergencia"]}
+                     for i in INSTRUMENTOS]}})

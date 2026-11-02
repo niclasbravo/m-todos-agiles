@@ -1,10 +1,161 @@
 <section class="nada" aria-labelledby="nada-titulo">
+  {% if n.perdida > 0.5 %}
+  <div class="estante" id="estante" aria-hidden="true" data-meses="{{ n.meses }}" data-pct="{{ n.pct_real }}">
+    <p class="estante-reloj"><b id="estante-mes">Hoy</b><span id="estante-poder">Tu plata alcanza para todo el estante</span></p>
+  </div>
+  {% endif %}
+  <div class="nada-texto">
   <h2 id="nada-titulo">¿Y si no lo pones en ninguna parte?</h2>
   {% if n.perdida > 0.5 %}
-  <p>Si guardas {{ n.final_fmt }} en efectivo o en una cuenta que no paga intereses durante {{ n.meses }} meses, seguirás teniendo {{ n.final_fmt }}. Pero con una inflación de {{ n.inflacion_txt }}% anual, esa plata alcanzaría para comprar lo que hoy cuesta {{ n.real_fmt }}: pierdes {{ n.perdida_fmt }} ({{ n.pct_perdida_txt }}%) de poder de compra aunque no gastes nada.</p>
-  <div class="barra" role="img" aria-label="Poder de compra de la plata guardada: {{ n.pct_real }}% de lo que tenías"><span class="a" style="width:{{ n.pct_real }}%"></span></div>
-  <p class="meta">Lo que hoy cuesta $10.000 costaría unos {{ n.canasta_fmt }} en {{ n.meses }} meses. Por eso incluso una opción muy segura que rinda cerca de la inflación es mejor que dejar la plata quieta, mientras mantengas aparte lo que necesitas para emergencias.</p>
+  <div class="nada-comp">
+    <div class="nada-col">
+      <span class="nada-et">Hoy tienes</span>
+      <strong>{{ n.final_fmt }}</strong>
+      <span class="billete" aria-hidden="true"><i>$</i></span>
+    </div>
+    <span class="nada-flecha" aria-hidden="true"></span>
+    <div class="nada-col">
+      <span class="nada-et">En {{ n.meses }} meses compra lo que hoy</span>
+      <strong class="pierde">{{ n.real_fmt }}</strong>
+      <span class="billete chico" style="--k:{{ n.pct_real }}" role="img" aria-label="Poder de compra de la plata guardada: {{ n.pct_real }}% de lo que tenías"><i>$</i></span>
+    </div>
+  </div>
+  <p class="nada-chips"><span class="chip negativo">−{{ n.pct_perdida_txt }}% de poder de compra</span><span class="chip">Pierdes {{ n.perdida_fmt }} sin gastar nada</span><span class="chip">Inflación {{ n.inflacion_txt }}% anual</span></p>
+  <details class="nada-mas">
+    <summary>¿Por qué pasa esto?</summary>
+    <p>Si guardas {{ n.final_fmt }} en efectivo o en una cuenta que no paga intereses durante {{ n.meses }} meses, seguirás teniendo {{ n.final_fmt }}. Pero con una inflación de {{ n.inflacion_txt }}% anual, esa plata alcanzaría para comprar lo que hoy cuesta {{ n.real_fmt }}: pierdes {{ n.perdida_fmt }} ({{ n.pct_perdida_txt }}%) de poder de compra aunque no gastes nada.</p>
+    <p>Lo que hoy cuesta $10.000 costaría unos {{ n.canasta_fmt }} en {{ n.meses }} meses. Por eso incluso una opción muy segura que rinda cerca de la inflación es mejor que dejar la plata quieta, mientras mantengas aparte lo que necesitas para emergencias.</p>
+  </details>
   {% else %}
   <p>Con una inflación de {{ n.inflacion_txt }}% la plata guardada mantiene su poder de compra, pero tampoco crece. Una inflación de 0% es poco realista: en Chile los precios suben casi todos los años.</p>
   {% endif %}
+  </div>
 </section>
+{% if n.perdida > 0.5 %}
+<script type="module">
+// Estante 3D: el scroll hace pasar los meses. Tu plata no cambia, pero los productos que alcanzas a
+// comprar van desapareciendo según la inflación, hasta el poder de compra real del final del plazo.
+// Usa la URL directa de three.js para funcionar en cualquier página; sin WebGL quedan los billetes.
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js";
+
+const caja = document.getElementById("estante");
+if (caja) iniciar();
+
+function iniciar() {
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); } catch (e) { caja.hidden = true; return; }
+  caja.closest(".nada").classList.add("con-3d");
+  const quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const meses = +caja.dataset.meses, pctFinal = parseFloat(caja.dataset.pct) / 100;
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setClearColor(0x000000, 0);
+  renderer.toneMapping = THREE.NeutralToneMapping;
+  renderer.shadowMap.enabled = true;
+  renderer.debug.checkShaderErrors = false; // evita avisos del compilador de la GPU en la consola
+  caja.prepend(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  const sol = new THREE.DirectionalLight(0xffffff, 2.3); sol.position.set(-3, 6, 5); sol.castShadow = true;
+  sol.shadow.mapSize.set(1024, 1024); sol.shadow.radius = 5; Object.assign(sol.shadow.camera, { left: -5, right: 5, top: 5, bottom: -5 });
+  scene.add(sol, new THREE.HemisphereLight(0xffffff, 0xd6dde6, 1.5));
+  const camara = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 50);
+  const mat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.75, ...extra });
+  // Caja con aristas redondeadas usando solo el núcleo de three.js.
+  function caja3(w, h, d, m, r = 0.04) {
+    const s = new THREE.Shape(), x = -w / 2, y = -h / 2;
+    s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r); s.lineTo(x + w, y + h - r);
+    s.quadraticCurveTo(x + w, y + h, x + w - r, y + h); s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r);
+    s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y);
+    const g = new THREE.ExtrudeGeometry(s, { depth: d - 2 * r, bevelEnabled: true, bevelThickness: r, bevelSize: 0, bevelSegments: 3, curveSegments: 6 });
+    g.translate(0, 0, -(d - 2 * r) / 2);
+    const o = new THREE.Mesh(g, m); o.castShadow = o.receiveShadow = true; return o;
+  }
+  const mesa = caja3(7.2, 0.2, 2.4, mat(0xf4f6f8), 0.08); mesa.position.y = -0.1; scene.add(mesa);
+  // Estante: dos repisas sobre un mueble blanco.
+  const mueble = new THREE.Group(); mueble.position.set(0.9, 0, -0.2); scene.add(mueble);
+  const fondo = caja3(4.6, 2.5, 0.12, mat(0xffffff)); fondo.position.set(0, 1.25, -0.55);
+  const repisaA = caja3(4.8, 0.1, 1.1, mat(0xe6eaef), 0.03); repisaA.position.set(0, 0.06, -0.05);
+  const repisaB = caja3(4.8, 0.1, 1.1, mat(0xe6eaef), 0.03); repisaB.position.set(0, 1.26, -0.05);
+  const ladoI = caja3(0.12, 2.5, 1.1, mat(0xffffff)); ladoI.position.set(-2.4, 1.25, -0.05);
+  const ladoD = caja3(0.12, 2.5, 1.1, mat(0xffffff)); ladoD.position.set(2.4, 1.25, -0.05);
+  mueble.add(fondo, repisaA, repisaB, ladoI, ladoD);
+  // Diez productos: cajas, tarros y frascos en tonos de arcilla, con una sola franja de color cada uno.
+  const TONOS = [0xf3e6cf, 0xe3ecef, 0xf6efe4, 0xe8e2d6, 0xf1e9dc];
+  const FRANJAS = [0xf2b937, 0x3b6aa8, 0xe0773b, 0x14a38b, 0x2b2f36];
+  const productos = [];
+  for (let k = 0; k < 10; k++) {
+    const fila = k < 5 ? 0 : 1, col = k % 5, x = -1.8 + col * 0.9, y = fila ? 1.31 : 0.11;
+    const g = new THREE.Group(), forma = k % 3;
+    let cuerpo, alto;
+    if (forma === 0) { alto = 0.85; cuerpo = caja3(0.55, alto, 0.42, mat(TONOS[k % 5])); cuerpo.position.y = alto / 2; }
+    else if (forma === 1) { alto = 0.6; cuerpo = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, alto, 28), mat(TONOS[(k + 2) % 5])); cuerpo.position.y = alto / 2; cuerpo.castShadow = true; }
+    else {
+      alto = 0.7; cuerpo = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.22, alto, 28), mat(0xffffff, { roughness: 0.4 })); cuerpo.position.y = alto / 2; cuerpo.castShadow = true;
+      const tapa = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.21, 0.1, 28), mat(0xf2b937, { roughness: 0.35, metalness: 0.4 })); tapa.position.y = alto + 0.05; g.add(tapa);
+    }
+    const franja = forma === 0 ? caja3(0.56, 0.16, 0.43, mat(FRANJAS[k % 5]), 0.02)
+      : new THREE.Mesh(new THREE.CylinderGeometry(forma === 1 ? 0.245 : 0.215, forma === 1 ? 0.245 : 0.215, 0.16, 28), mat(FRANJAS[k % 5]));
+    franja.position.y = alto * 0.55; g.add(cuerpo, franja);
+    g.position.set(x, y, 0); mueble.add(g);
+    productos.push({ g, sale: 0, vel: 0, base: y });
+  }
+  // Tu fajo de billetes: no cambia en todo el plazo.
+  const fajo = new THREE.Group(); fajo.position.set(-2.55, 0, 0.45); scene.add(fajo);
+  for (let k = 0; k < 7; k++) {
+    const b = caja3(1.1, 0.07, 0.56, mat(k % 2 ? 0xbfe0d6 : 0xa9d3c6), 0.02);
+    b.position.set((k % 3 - 1) * 0.03, 0.035 + k * 0.075, (k % 2) * 0.03); b.rotation.y = (k % 3 - 1) * 0.05; fajo.add(b);
+  }
+  const faja = caja3(0.22, 0.56, 0.6, mat(0xf2b937, { roughness: 0.4 }), 0.02); faja.position.y = 0.28; fajo.add(faja);
+
+  function medir() {
+    const w = caja.clientWidth, h = caja.clientHeight; if (!w || !h) return;
+    renderer.setSize(w, h, false);
+    camara.position.set(3.5, 3.4, 7.5); camara.lookAt(0, 1, 0); camara.updateMatrixWorld();
+    const inv = camara.matrixWorldInverse, v = new THREE.Vector3();
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (let k = 0; k < 8; k++) {
+      v.set(k & 1 ? 3.6 : -3.6, k & 2 ? 2.7 : -0.2, k & 4 ? 1.2 : -1).applyMatrix4(inv);
+      x0 = Math.min(x0, v.x); x1 = Math.max(x1, v.x); y0 = Math.min(y0, v.y); y1 = Math.max(y1, v.y);
+    }
+    let mw = (x1 - x0) / 2 * 1.04, mh = (y1 - y0) / 2 * 1.16; const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+    if (mw / mh > w / h) mh = mw / (w / h); else mw = mh * (w / h);
+    Object.assign(camara, { left: cx - mw, right: cx + mw, top: cy + mh + mh * 0.08, bottom: cy - mh + mh * 0.08 });
+    camara.updateProjectionMatrix();
+  }
+  medir(); new ResizeObserver(medir).observe(caja);
+
+  // El scroll por el bloque es el paso del tiempo: 0 al entrar, el plazo completo al pasar su centro.
+  const relojMes = document.getElementById("estante-mes"), relojPoder = document.getElementById("estante-poder");
+  let progreso = quieto ? 1 : 0;
+  function leerScroll() {
+    if (quieto) return;
+    const r = caja.getBoundingClientRect(), vh = innerHeight;
+    progreso = Math.min(1, Math.max(0, (vh - r.top) / (vh * 0.75 + r.height * 0.4) - 0.15));
+  }
+  addEventListener("scroll", leerScroll, { passive: true }); leerScroll();
+
+  let antes = performance.now(), ultimoMes = -1;
+  renderer.setAnimationLoop(() => {
+    const ahora = performance.now(), dt = Math.min(0.05, (ahora - antes) / 1000), t = ahora / 1000; antes = ahora;
+    const m = Math.round(progreso * meses), poder = Math.pow(pctFinal, m / meses);
+    const quedan = Math.max(1, Math.round(poder * 10 - 1e-9));
+    productos.forEach((p, k) => {
+      const meta = k < quedan ? 0 : 1; // los últimos de la lista son los que ya no alcanzas
+      if (quieto) p.sale = meta;
+      else { p.vel += ((meta - p.sale) * 120 - p.vel * 13) * dt; p.sale += p.vel * dt; }
+      const s = Math.max(0.001, 1 - p.sale);
+      p.g.scale.setScalar(s); p.g.position.y = p.base + p.sale * 0.5; p.g.rotation.y = p.sale * 0.8;
+      p.g.visible = s > 0.02;
+    });
+    fajo.position.y = quieto ? 0 : Math.sin(t * 1.4) * 0.02;
+    if (m !== ultimoMes) {
+      ultimoMes = m;
+      relojMes.textContent = m === 0 ? "Hoy" : m % 12 === 0 ? `Año ${m / 12}` : `Mes ${m}`;
+      relojPoder.textContent = m === 0 ? "Tu plata alcanza para todo el estante"
+        : `La misma plata alcanza para el ${Math.round(poder * 100)}% de lo que comprabas`;
+    }
+    renderer.render(scene, camara);
+  });
+}
+</script>
+{% endif %}

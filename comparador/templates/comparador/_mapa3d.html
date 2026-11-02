@@ -23,6 +23,8 @@
     <span><i class="sw" style="background:#f2b937"></i>Pallets que gana tu plata</span>
   </p>
   <button type="button" class="ver-todo" id="ver-todo" hidden>Ver todo el mapa</button>
+  <nav class="zonas" id="zonas" aria-label="Zonas del mapa"><button type="button" data-zona="todo" class="on" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg><span>Todo</span></button><button type="button" data-zona="bancos" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10l9-6 9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/></svg><span>Bancos</span></button><button type="button" data-zona="fondos" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18l5-6 4 3 7-9M15 6h5v5"/></svg><span>Fondos</span></button><button type="button" data-zona="pension" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a8 8 0 0 1 8 8H4a8 8 0 0 1 8-8zM12 11v7a2 2 0 0 0 4 0"/></svg><span>Pensión</span></button><button type="button" data-zona="casa" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7M6 9.5V20h12V9.5M10 20v-5h4v5"/></svg><span>Tu casa</span></button></nav>
+  <div class="zona-card" id="zona-card" hidden aria-live="polite"></div>
   <div class="tiempo">
     <button type="button" class="play" id="play" aria-label="Reproducir el ahorro desde hoy">▶</button>
     <div class="linea">
@@ -32,13 +34,13 @@
   </div>
 </section>
 <style>
-.hero{position:relative;width:100vw;margin:-24px 0 32px calc(50% - 50vw);height:max(620px,calc(100vh - 57px));background:#eef1f5;border-bottom:1px solid var(--border);overflow:hidden}
-@media(prefers-color-scheme:dark){.hero{background:#1a1c20}}
+.hero{position:relative;width:100vw;margin:-24px 0 32px calc(50% - 50vw);height:max(620px,calc(100vh - 57px));background:#c4e0ee;border-bottom:1px solid var(--border);overflow:hidden}
+
 .hero .escena{position:absolute;inset:0;touch-action:pan-y;cursor:pointer}
 .escena canvas{display:block;width:100%;height:100%}
 .tarjetas{position:absolute;inset:0;pointer-events:none}
 .hero-card,.kpis,.tiempo,.mapa-ley,.ver-todo{position:absolute;z-index:3;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 10px 30px rgba(15,23,42,.10)}
-.hero-card{left:max(24px,calc(50vw - 560px));bottom:112px;width:min(460px,calc(100vw - 48px));padding:26px 26px 22px;animation:subir 600ms var(--ease-out) both}
+.hero-card{left:max(24px,calc(50vw - 560px));bottom:168px;width:min(460px,calc(100vw - 48px));padding:26px 26px 22px;animation:subir 600ms var(--ease-out) both}
 .marca3d{margin:0 0 10px;font:800 clamp(46px,5.6vw,76px)/.92 "Bricolage Grotesque",Geist,system-ui,sans-serif;letter-spacing:-.035em;color:var(--text);
   text-shadow:1px 1px 0 #e3a92b,2px 2px 0 #d99a00,3px 3px 0 #cf9200,4px 4px 0 #c48a00,5px 5px 0 #b98200,6px 6px 0 #ad7900,7px 8px 18px rgba(0,0,0,.18);
   transform:perspective(700px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transform-origin:30% 60%;will-change:transform}
@@ -47,7 +49,7 @@
 .hero-lead{margin:0 0 18px;color:var(--muted);font-size:14px}
 .hero-cta{display:flex;flex-wrap:wrap;gap:10px;margin:0}
 .hero-cta .btn{margin:0}
-.panel-sim{position:absolute;top:auto;z-index:4;left:max(24px,calc(50vw - 560px));bottom:112px;width:min(400px,calc(100vw - 48px));padding:20px 22px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 10px 30px rgba(15,23,42,.14);
+.panel-sim{position:absolute;top:auto;z-index:4;left:max(24px,calc(50vw - 560px));bottom:168px;width:min(400px,calc(100vw - 48px));padding:20px 22px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 10px 30px rgba(15,23,42,.14);
   transform-origin:20% 100%;transition:opacity 220ms var(--ease-out),transform 220ms var(--ease-out)}
 .panel-sim[hidden]{display:block;opacity:0;transform:translateY(12px) scale(.97);pointer-events:none;visibility:hidden;transition:opacity 150ms ease,transform 150ms ease,visibility 0s 150ms}
 .panel-sim.abierto{opacity:1;transform:none}
@@ -70,12 +72,29 @@
 .mapa-ley{top:20px;left:max(24px,calc(50vw - 560px));margin:0;padding:10px 14px;font-size:12px}
 .ver-todo{top:96px;right:max(24px,calc(50vw - 560px));width:auto;min-height:40px;padding:8px 14px;color:var(--text);font-weight:600;font-size:13px}
 .ver-todo[hidden]{display:none}
+.zonas{position:absolute;z-index:3;left:50%;bottom:96px;transform:translateX(-50%);display:flex;gap:4px;padding:5px;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 10px 30px rgba(15,23,42,.10);animation:subirc 600ms 160ms var(--ease-out) both}
+.zonas button{width:auto;min-height:40px;display:inline-flex;align-items:center;gap:7px;padding:8px 14px;background:transparent;color:var(--muted);border:0;border-radius:10px;font-size:13px;font-weight:600;transition:background-color 180ms ease,color 180ms ease,transform 160ms var(--ease-out)}
+.zonas button svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.zonas button.on{background:var(--text);color:var(--surface)}
+@media(hover:hover) and (pointer:fine){.zonas button:not(.on):hover{background:var(--raised);color:var(--text)}}
+.zona-card{position:absolute;z-index:4;left:max(24px,calc(50vw - 560px));bottom:168px;width:min(400px,calc(100vw - 48px));padding:20px 22px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 10px 30px rgba(15,23,42,.14);transition:opacity 220ms var(--ease-out),transform 220ms var(--ease-out)}
+.zona-card[hidden]{display:block;opacity:0;transform:translateY(12px) scale(.97);visibility:hidden;pointer-events:none;transition:opacity 150ms ease,transform 150ms ease,visibility 0s 150ms}
+.zona-card .zc-et{display:block;font-size:12px;font-weight:600;color:#b07c00;margin-bottom:4px}
+.zona-card h2{margin:0 0 8px;font:800 26px/1.1 "Bricolage Grotesque",Geist,system-ui,sans-serif;letter-spacing:-.02em}
+.zona-card p{margin:0 0 12px;font-size:14px;color:var(--muted)}
+.zona-card ul{list-style:none;margin:0;padding:0}
+.zona-card li button{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:44px;padding:8px 10px;margin:0 -10px;width:calc(100% + 20px);background:transparent;color:var(--text);border:0;border-radius:8px;font-weight:500;text-align:left}
+.zona-card li button b{font-variant-numeric:tabular-nums}
+@media(hover:hover) and (pointer:fine){.zona-card li button:hover{background:var(--raised)}}
+.pin.distrito{width:auto;min-height:0;display:block;border:0;border-radius:99px;background:#0a0a0a;color:#fff;font-size:12px;font-weight:700;padding:6px 12px;pointer-events:auto;cursor:pointer;letter-spacing:.01em}
+.pin.distrito.oculto{opacity:0;pointer-events:none}
 .tiempo{left:50%;bottom:24px;transform:translateX(-50%);width:min(720px,calc(100vw - 48px));display:flex;align-items:center;gap:16px;padding:10px 18px 12px;animation:subir 600ms 220ms var(--ease-out) both}
 .tiempo .play{width:44px;min-height:44px;padding:0;flex:none;font-size:16px}
 .linea{flex:1;min-width:0}
 .linea input[type=range]{width:100%;height:26px;border:0;padding:0;background:transparent;accent-color:#d99a00}
 .hitos{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 .hitos span.on{color:var(--text);font-weight:600}
+@media(max-width:700px){.hitos.muchos span:nth-child(even):not(:last-child){display:none}}
 .pin{position:absolute;transform:translate(-50%,-100%);background:#fff;color:#0a0a0a;border-radius:8px;padding:3px 8px;font-size:12px;font-weight:700;line-height:1.3;white-space:nowrap;box-shadow:0 4px 14px rgba(15,23,42,.14);font-variant-numeric:tabular-nums;transition:transform 220ms var(--ease-out),padding 220ms var(--ease-out)}
 .pin b{display:none;font-size:13px}
 .pin .vivo{display:none;color:#5f6368;margin-top:2px;font-weight:400}
@@ -91,6 +110,10 @@
 @keyframes latido{50%{opacity:.35}}
 @media(max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,150px))}.kpi:nth-child(3){border-left:0}.kpi:nth-child(n+3){border-top:1px solid var(--border)}.ver-todo{top:auto;bottom:100px}}
 @media(max-width:700px){
+  .zonas{position:static;transform:none;margin:12px 16px 0;overflow-x:auto;box-shadow:none;animation:none}
+  .zonas button{flex:none}
+  .zona-card{position:static;width:auto;margin:12px 16px;box-shadow:none}
+  .zona-card[hidden]{display:none}
   .panel-sim{position:static;width:auto;margin:12px 16px;box-shadow:none}
   .panel-sim[hidden]{display:none}
   .hero-card.oculta{display:none}
@@ -183,7 +206,10 @@ function iniciar() {
   const tipo = (nombre) => /APV/.test(nombre) ? "apv" : /Principal/.test(nombre) ? "fondo" : "banco";
   let D = datos, inst = D.inst, cortes = D.meses.length;
   const n = inst.length;
-  const lugares = [[-6, -2.6], [-2, -2.6], [2, -2.6], [6, -2.6], [-4, 2.6], [0, 2.6], [4, 2.6], [8.6, 2.6]].slice(0, n);
+  // Tres barrios: bancos adelante a la izquierda, fondos atrás junto a la torre, pensión adelante a la derecha.
+  const PUESTOS = { banco: [[-7.2, 2.6], [-3.6, 2.6]], fondo: [[-5.4, -2.6], [-1.8, -2.6], [1.8, -2.6], [5.4, -2.6]], apv: [[1.4, 2.6]] };
+  const libres = [[-0.2, 5.6], [4, 5.6]], usados = { banco: 0, fondo: 0, apv: 0 };
+  const lugares = inst.map((d) => PUESTOS[tipo(d.nombre)][usados[tipo(d.nombre)]++] || libres.shift() || [0, 0]);
   const sucursales = inst.map((d, i) => {
     const [x, z] = lugares[i], frente = z > 0 ? -1 : 1, color = colores[tipo(d.nombre)];
     const g = new THREE.Group(); g.position.set(x, 0, z);
@@ -201,6 +227,114 @@ function iniciar() {
     scene.add(g);
     return { g, edificio, color, frente, alto, partes: [edificio, banda, ventanas, losa] };
   });
+
+  // ---------- Barrios ----------
+  const placa = (x0, x1, z0, z1, color) => {
+    const m = pieza(x1 - x0, 0.04, z1 - z0, mat(color), 0.2); m.position.set((x0 + x1) / 2, 0.02, (z0 + z1) / 2); scene.add(m);
+  };
+  placa(-9.2, -1.6, 0.85, 4.35, 0xe7eef8);   // bancos
+  placa(-7.4, 10.6, -4.35, -0.85, 0xe5f2ee); // fondos
+  placa(-0.6, 10.6, 0.85, 4.75, 0xf6ece2);   // pensión
+  // Torre de la bolsa: el distrito de fondos.
+  const torre = new THREE.Group(); torre.position.set(9, 0, -2.6);
+  const tc = pieza(1.7, 3.6, 1.7, blanco, 0.12); tc.position.y = 1.8;
+  const tv = pieza(1.72, 2.6, 1.3, vidrio, 0.05); tv.position.set(0, 1.9, 0.22);
+  const tt = pieza(1.85, 0.3, 1.85, mat(0xf2b937, { roughness: 0.35, metalness: 0.5 }), 0.08); tt.position.y = 3.72;
+  const ta = pieza(0.08, 0.7, 0.08, gris, 0.03); ta.position.set(0.4, 4.2, 0.3);
+  torre.add(tc, tv, tt, ta); scene.add(torre);
+  // Barrio pensión: casas bajas y una plaza.
+  [[4.6, 2.2, 0xffffff], [6.4, 3.4, 0xfdf6ec], [8.2, 2.2, 0xffffff], [9.8, 3.4, 0xfdf6ec]].forEach(([x, z, c], k) => {
+    const g = new THREE.Group(); g.position.set(x, 0, z);
+    const b = pieza(1.2, 0.8, 1, mat(c)); b.position.y = 0.45;
+    const t = new THREE.Mesh(new THREE.ConeGeometry(0.95, 0.6, 4), mat(k % 2 ? 0xe0773b : 0x2b2f36)); t.position.y = 1.15; t.rotation.y = Math.PI / 4; t.castShadow = true;
+    const pu = pieza(0.26, 0.42, 0.04, mat(0xf2b937), 0.02); pu.position.set(0, 0.26, 0.51);
+    g.add(b, t, pu); scene.add(g);
+  });
+  const plaza = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 0.06, 40), mat(0xd9ead0)); plaza.position.set(6.6, 0.05, 5.2); plaza.receiveShadow = true; scene.add(plaza);
+  arbol(6.2, 5.1, 0.75); arbol(7.2, 5.4, 0.6);
+
+  // ---------- Mundo vivo: agua con olas, muelle, bote, gente y nubes ----------
+  const geoAgua = new THREE.PlaneGeometry(80, 56, 80, 56); geoAgua.rotateX(-Math.PI / 2);
+  const agua = new THREE.Mesh(geoAgua, mat(0xbcdcec, { roughness: 0.35, metalness: 0.05, flatShading: true }));
+  agua.position.y = -0.34; agua.receiveShadow = true; scene.add(agua);
+  const aguaBase = geoAgua.attributes.position.array.slice();
+  const muelle = pieza(1, 0.12, 2.2, mat(0xc9a27a), 0.03); muelle.position.set(10.6, -0.12, 7.4); scene.add(muelle);
+  [[10.2, 6.6], [11, 6.6], [10.2, 8.3], [11, 8.3]].forEach(([x, z]) => { const p = pieza(0.1, 0.5, 0.1, mat(0x9c7a58), 0.02); p.position.set(x, -0.3, z); scene.add(p); });
+  const bote = new THREE.Group();
+  const casco = pieza(1.7, 0.36, 0.62, blanco, 0.14); casco.position.y = 0.12;
+  const cabina = pieza(0.6, 0.34, 0.46, blanco, 0.08); cabina.position.set(-0.25, 0.46, 0);
+  const vidrioB = pieza(0.62, 0.12, 0.48, vidrio, 0.03); vidrioB.position.set(-0.25, 0.52, 0);
+  const franjaB = pieza(1.72, 0.07, 0.64, mat(0xf2b937), 0.03); franjaB.position.y = 0.2;
+  bote.add(casco, cabina, vidrioB, franjaB); scene.add(bote);
+  // Un velero que navega lento detrás de la isla.
+  const velero = new THREE.Group();
+  const cascoV = pieza(1.3, 0.28, 0.46, blanco, 0.12); cascoV.position.y = 0.1;
+  const mastil = pieza(0.05, 1.3, 0.05, gris, 0.02); mastil.position.set(0.05, 0.85, 0);
+  const formaVela = new THREE.Shape(); formaVela.moveTo(0, 0); formaVela.lineTo(0.75, 0); formaVela.lineTo(0, 1.1); formaVela.lineTo(0, 0);
+  const vela = new THREE.Mesh(new THREE.ShapeGeometry(formaVela), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8, side: THREE.DoubleSide }));
+  vela.position.set(0.1, 0.32, 0); vela.castShadow = true;
+  const banderin = new THREE.Mesh(new THREE.ShapeGeometry((() => { const f = new THREE.Shape(); f.moveTo(0, 0); f.lineTo(0.28, -0.08); f.lineTo(0, -0.16); return f; })()), new THREE.MeshStandardMaterial({ color: 0xf2b937, side: THREE.DoubleSide }));
+  banderin.position.set(0.07, 1.5, 0);
+  velero.add(cascoV, mastil, vela, banderin); scene.add(velero);
+  const geoPersona = new THREE.CapsuleGeometry(0.075, 0.16, 4, 8);
+  const gente = new THREE.InstancedMesh(geoPersona, mat(0xffffff), 12);
+  gente.castShadow = true; scene.add(gente);
+  const caminantes = Array.from({ length: 12 }, (_, k) => ({
+    x: -11 + ((k * 1.93) % 22), z: k % 2 ? 0.86 : -0.86, dir: k % 3 ? 1 : -1, vel: 0.3 + (k % 4) * 0.08, fase: k,
+  }));
+  const tonosGente = [0x2b2f36, 0xe0773b, 0x2f6fde, 0x14a38b, 0xd99a00, 0x8a8f99];
+  caminantes.forEach((_, k) => gente.setColorAt(k, new THREE.Color(tonosGente[k % tonosGente.length])));
+  const nubes = [[-8, 6.4, -1.5], [6, 7, 2.5]].map(([x, y, z], k) => {
+    const g = new THREE.Group();
+    [[0, 0, 0, 0.9], [0.8, -0.1, 0.2, 0.7], [-0.8, -0.15, -0.1, 0.65], [0.2, 0.35, -0.2, 0.6]].forEach(([dx, dy, dz, r]) => {
+      const b = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 1), mat(0xffffff, { roughness: 1 }));
+      b.position.set(dx, dy, dz); b.castShadow = true; g.add(b);
+    });
+    g.position.set(x, y, z); g.userData = { vel: 0.25 + k * 0.1 }; scene.add(g); return g;
+  });
+  const espuma = new THREE.Mesh(new THREE.PlaneGeometry(27.6, 14.6), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.55 }));
+  espuma.rotation.x = -Math.PI / 2; espuma.position.y = -0.27; scene.add(espuma);
+  const geoCresta = new THREE.CapsuleGeometry(0.05, 0.9, 3, 6); geoCresta.rotateZ(Math.PI / 2);
+  const crestas = new THREE.InstancedMesh(geoCresta, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85 }), 26);
+  scene.add(crestas);
+  const datosCrestas = Array.from({ length: 26 }, (_, k) => {
+    const lado = k % 4; // repartidas alrededor de la isla, fuera de la orilla
+    const x = lado < 2 ? -18 + ((k * 4.7) % 36) : (lado === 2 ? -16.5 : 16.5) + Math.sin(k) * 1.5;
+    const z = lado === 0 ? -9 - (k % 3) * 1.6 : lado === 1 ? 9 + (k % 3) * 1.4 : -6 + ((k * 3.1) % 12);
+    return { x, z, fase: (k * 0.37) % 1, vel: 0.35 + (k % 5) * 0.06 };
+  });
+  const mCresta = new THREE.Matrix4(), pCresta = new THREE.Vector3(), qCresta = new THREE.Quaternion(), sCresta = new THREE.Vector3();
+  const mGente = new THREE.Matrix4(), pGente = new THREE.Vector3(), qGente = new THREE.Quaternion(), sGente = new THREE.Vector3(1, 1, 1);
+  function animarMundo(t, dt) {
+    if (!quieto) {
+      const a = geoAgua.attributes.position.array;
+      for (let k = 0; k < a.length; k += 3) {
+        const x = aguaBase[k], z = aguaBase[k + 2];
+        a[k + 1] = Math.sin(x * 0.55 + z * 0.2 + t * 1.3) * 0.085 + Math.cos(z * 0.7 - x * 0.15 + t * 0.9) * 0.06;
+      }
+      geoAgua.attributes.position.needsUpdate = true; geoAgua.computeVertexNormals();
+      nubes.forEach((n) => { n.position.x += n.userData.vel * dt; if (n.position.x > 16) n.position.x = -16; });
+      const respira = 1 + Math.sin(t * 1.3) * 0.012;
+      espuma.scale.set(respira, respira, 1); espuma.material.opacity = 0.45 + Math.sin(t * 1.3) * 0.15;
+      datosCrestas.forEach((c, k) => {
+        const u = (t * 0.22 + c.fase) % 1, vida = Math.sin(u * Math.PI); // nace, crece y se desvanece
+        pCresta.set(c.x + u * c.vel * 4, -0.26 + vida * 0.05, c.z);
+        sCresta.set(0.3 + vida * 0.9, 1, 1); mCresta.compose(pCresta, qCresta, sCresta); crestas.setMatrixAt(k, mCresta);
+      });
+      crestas.instanceMatrix.needsUpdate = true;
+    }
+    const bx = quieto ? 4 : ((t * 1.1) % 34) - 17;
+    bote.position.set(bx, -0.28 + Math.sin(t * 1.6) * 0.04, 7.1);
+    velero.position.set(quieto ? -4 : -14 + ((t * 0.45) % 28), -0.3 + Math.sin(t * 1.2 + 1) * 0.05, -7.3);
+    velero.rotation.z = Math.sin(t * 1.1) * 0.06;
+    bote.rotation.z = Math.sin(t * 1.3) * 0.04; bote.rotation.x = Math.sin(t * 1.1) * 0.03;
+    caminantes.forEach((c, k) => {
+      if (!quieto) { c.x += c.dir * c.vel * dt; if (c.x > 11.4) c.x = -11.4; if (c.x < -11.4) c.x = 11.4; }
+      pGente.set(c.x, 0.2 + (quieto ? 0 : Math.abs(Math.sin(t * 7 + c.fase)) * 0.04), c.z);
+      mGente.compose(pGente, qGente, sGente); gente.setMatrixAt(k, mGente);
+    });
+    gente.instanceMatrix.needsUpdate = true;
+  }
 
   // Pallets instanciados: 3 x 3 por capa en el patio.
   const MAXP = 45, PP = 0.42, PH = 0.22;
@@ -244,7 +378,7 @@ function iniciar() {
     const inv = camara.matrixWorldInverse, v = new THREE.Vector3();
     let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
     for (let k = 0; k < 8; k++) {
-      v.set(k & 1 ? 12.6 : -12.6, k & 2 ? 2.6 : -0.6, k & 4 ? 6.2 : -6.2).applyMatrix4(inv);
+      v.set(k & 1 ? 12.6 : -12.6, k & 2 ? 2.6 : -0.6, k & 4 ? 7.4 : -6.2).applyMatrix4(inv);
       x0 = Math.min(x0, v.x); x1 = Math.max(x1, v.x); y0 = Math.min(y0, v.y); y1 = Math.max(y1, v.y);
     }
     const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
@@ -271,6 +405,7 @@ function iniciar() {
     const marcas = total >= 24 ? Array.from({ length: Math.floor(total / 12) + 1 }, (_, k) => k * 12) : [0, total];
     if (marcas[marcas.length - 1] !== total) marcas.push(total);
     hitos.innerHTML = marcas.map((m) => `<span data-m="${m}">${m === 0 ? "Hoy" : m % 12 === 0 ? `Año ${m / 12}` : `${m} meses`}</span>`).join("");
+    hitos.classList.toggle("muchos", marcas.length > 6);
   }
   armarHitos();
 
@@ -330,7 +465,7 @@ function iniciar() {
   let reproduciendo = false, t0 = 0;
   const DURA = 6;
   const reproducir = () => { if (quieto) return; reproduciendo = true; t0 = performance.now(); };
-  rango.addEventListener("input", () => { reproduciendo = false; momento = +rango.value; textos(momento); });
+  rango.addEventListener("input", () => { reproduciendo = false; momento = +rango.value; textos(momento); refrescarZona(); });
   play.addEventListener("click", reproducir);
   construir(momento, performance.now() / 1000); textos(momento); rango.value = Math.round(momento);
   new IntersectionObserver((e, o) => { if (e[0].isIntersecting) { reproducir(); o.disconnect(); } }, { threshold: 0.35 }).observe(escena);
@@ -355,7 +490,7 @@ function iniciar() {
     focoObj.set(sucursales[i].g.position.x * 0.85, 0, sucursales[i].g.position.z * 0.6);
     zoomObj = zoomBase * 1.8; verTodo.hidden = false;
   }
-  function soltar() { enfocado = false; focoObj.set(0, 0, 0); zoomObj = zoomBase; verTodo.hidden = true; }
+  function soltar() { enfocado = false; focoObj.set(0, 0, 0); zoomObj = zoomBase; verTodo.hidden = true; marcarZona("todo"); }
   renderer.domElement.addEventListener("pointermove", (ev) => { if (!enfocado) { const i = tocar(ev); if (i >= 0) seleccionar(i); } });
   renderer.domElement.addEventListener("click", (ev) => { const i = tocar(ev); if (i >= 0) enfocar(i); else if (enfocado) soltar(); });
   verTodo.addEventListener("click", soltar);
@@ -498,6 +633,73 @@ function iniciar() {
     reproducir();
   }
 
+
+  // ---------- Zonas: la barra de abajo lleva la cámara a cada barrio ----------
+  const ZONAS = {
+    bancos: { titulo: "Bancos", et: "Riesgo muy bajo", foco: [-5.4, 2.6], zoom: 1.9, tipo: "banco",
+      texto: "Cuenta vista con intereses y depósito a plazo: tu plata queda en un banco, con una tasa que conoces de antemano. Ideal para el fondo de emergencia o metas cortas." },
+    fondos: { titulo: "Fondos mutuos", et: "Riesgo bajo a alto", foco: [2.2, -2.6], zoom: 1.35, tipo: "fondo",
+      texto: "Juntan la plata de muchas personas y la invierten en deuda o acciones. Pueden subir o bajar: la tasa que ves es el promedio de los últimos 3 años y no está garantizada." },
+    pension: { titulo: "Pensión (APV)", et: "Largo plazo", foco: [4.4, 2.9], zoom: 1.7, tipo: "apv",
+      texto: "Ahorro Previsional Voluntario, régimen A: el Estado bonifica el 15% de lo que aportas en el año, con tope de 6 UTM. Es para la pensión: si retiras antes, devuelves el bono." },
+    casa: { titulo: "Tu casa", et: "De aquí sale tu ahorro", foco: [-9.4, -2.4], zoom: 2.2, tipo: null, texto: "" },
+  };
+  const navZonas = $("zonas"), zonaCard = $("zona-card");
+  let zonaActual = "todo";
+  function marcarZona(z) {
+    zonaActual = z;
+    navZonas.querySelectorAll("button").forEach((b) => { const on = b.dataset.zona === z; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
+    pinesDistrito.forEach((pd) => pd.el.classList.toggle("oculto", z !== "todo"));
+    if (z === "todo") { zonaCard.hidden = true; if (panel.hidden) tarjeta.classList.remove("oculta"); }
+  }
+  function pintarZona(z) {
+    const Z = ZONAS[z];
+    const aporte = +(campo("aporte")?.value || 0);
+    const items = Z.tipo ? inst.map((d, i) => ({ d, i })).filter(({ d }) => tipo(d.nombre) === Z.tipo) : [];
+    zonaCard.innerHTML = `<span class="zc-et"></span><h2></h2><p></p><ul></ul>`;
+    zonaCard.querySelector(".zc-et").textContent = Z.et;
+    zonaCard.querySelector("h2").textContent = Z.titulo;
+    zonaCard.querySelector("p").textContent = Z.tipo ? Z.texto
+      : `Cada mes sale de aquí tu aporte de ${clp(aporte)}. Toca la casa en el mapa para mandar los camiones a todas las sucursales.`;
+    const ul = zonaCard.querySelector("ul");
+    items.forEach(({ d, i }) => {
+      const li = document.createElement("li"), b = document.createElement("button");
+      b.type = "button"; b.dataset.i = i; b.innerHTML = "<span></span><b></b>";
+      b.firstChild.textContent = d.nombre.split(" (")[0]; b.lastChild.textContent = corto(d.ahora.nominal);
+      b.addEventListener("click", () => { enfocar(i); enviar(i); });
+      li.append(b); ul.append(li);
+    });
+  }
+  function irZona(z) {
+    if (z === "todo") { soltar(); return; }
+    const Z = ZONAS[z];
+    marcarZona(z); enfocado = true; verTodo.hidden = false;
+    focoObj.set(Z.foco[0] * 0.85, 0, Z.foco[1] * 0.6); zoomObj = zoomBase * Z.zoom;
+    const primero = inst.findIndex((d) => Z.tipo && tipo(d.nombre) === Z.tipo);
+    if (primero >= 0) seleccionar(primero);
+    if (!panel.hidden) cerrar();
+    tarjeta.classList.add("oculta"); pintarZona(z); zonaCard.hidden = false;
+    if (z === "casa") inst.forEach((_, i) => enviar(i, i * 0.15));
+  }
+  function refrescarZona() { // los montos de la tarjeta siguen al tiempo del mapa
+    if (zonaCard.hidden) return;
+    zonaCard.querySelectorAll("button[data-i]").forEach((b) => { b.lastChild.textContent = corto(inst[+b.dataset.i].ahora.nominal); });
+  }
+  navZonas.addEventListener("click", (ev) => { const b = ev.target.closest("button[data-zona]"); if (b) irZona(b.dataset.zona); });
+  // Las tarjetas del simulador pueden pedirle al mapa que enfoque una sucursal.
+  window.enfocarSucursal = (nombre) => {
+    const i = inst.findIndex((d) => d.nombre === nombre);
+    if (i < 0) return;
+    marcarZona(Object.keys(ZONAS).find((z) => ZONAS[z].tipo === tipo(nombre)) || "todo");
+    enfocar(i); enviar(i);
+  };
+  // Etiquetas flotantes de cada barrio (solo en la vista general).
+  const pinesDistrito = [["bancos", "Bancos"], ["fondos", "Fondos"], ["pension", "Pensión"]].map(([z, t]) => {
+    const el = document.createElement("button"); el.type = "button"; el.className = "pin distrito"; el.textContent = t;
+    el.addEventListener("click", () => irZona(z)); capa.append(el);
+    return { z, el };
+  });
+
   const v = new THREE.Vector3();
   let antes = performance.now(), ultimo = 0;
   renderer.setAnimationLoop(() => {
@@ -506,10 +708,11 @@ function iniciar() {
       momento = Math.min(cortes - 1, ((ms - t0) / 1000 / DURA) * (cortes - 1));
       rango.value = Math.round(momento);
       if (momento >= cortes - 1) reproduciendo = false;
-      if (ms - ultimo > 150 || !reproduciendo) { ultimo = ms; textos(momento); }
+      if (ms - ultimo > 150 || !reproduciendo) { ultimo = ms; textos(momento); refrescarZona(); }
     }
     construir(momento, ms / 1000);
     moverEnvios(ms / 1000);
+    animarMundo(ms / 1000, dt);
     camiones.forEach((c) => {
       const u = c.userData;
       if (!quieto) { u.x += u.dir * u.vel * dt; if (u.x > 11) u.x = -11; if (u.x < -11) u.x = 11; }
@@ -533,7 +736,7 @@ function iniciar() {
     const w = escena.clientWidth, h = escena.clientHeight;
     const poner = (el, x, y, z) => {
       v.set(x, y, z).project(camara);
-      const medio = el.offsetWidth / 2 + 8; // la tarjeta nunca se sale de la escena
+      const medio = el.offsetWidth / 2 + 20; // la tarjeta nunca se sale de la escena
       el.style.left = Math.min(w - medio, Math.max(medio, ((v.x + 1) / 2) * w)) + "px";
       el.style.top = Math.max(el.offsetHeight + 8, ((1 - v.y) / 2) * h) + "px";
     };
@@ -542,6 +745,8 @@ function iniciar() {
       poner(pines[i], su.g.position.x - 0.1, Math.max(su.alto + 0.6, 0.3 + d.ahora.capas * PH + 0.5), su.g.position.z - 0.3 * su.frente);
     });
     poner(pinCasa, casa.position.x, 2.1, casa.position.z);
+    const ALTO_D = { bancos: [-3.6, 3.4, 4.2], fondos: [9, 4.9, -2.6], pension: [7.2, 2.6, 3] };
+    pinesDistrito.forEach(({ z, el }) => poner(el, ALTO_D[z][0], ALTO_D[z][1], ALTO_D[z][2]));
   });
 }
 
