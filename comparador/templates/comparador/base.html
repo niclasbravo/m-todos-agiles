@@ -3,11 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var t=localStorage.getItem("tema");if(t=="claro"||t=="oscuro")document.documentElement.dataset.theme=t=="oscuro"?"dark":"light"}catch(e){}</script>
 <title>{% block titulo %}¿Dónde ahorro? Simulador de ahorro e inversión en Chile{% endblock %}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Geist:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{--ground:#f2f4f7;--surface:#ffffff;--raised:#eef0f3;--border:#e4e7ec;--rule:#eef0f3;--control:#8c8f94;--text:#0a0a0a;--muted:#5f6368;--primary:#141414;--hue:#9a6c00;--data-ink:#141414;--data-grey:#9aa0a6;--positive:#247b50;--negative:#c4242a;--warning-ink:#92400e;--warning-bg:#fffbeb;--warning-border:#fde68a;--real:#c4242a;--serie-pones:#3b6aa8;--serie-gana:#b37a00;--efectivo:#0f766e;--azul:var(--hue);--gana:var(--hue);--ink:var(--text);--mute:var(--muted);--line:var(--border);--card:var(--surface);--bg:var(--ground);--button-label:#fff;color-scheme:light dark}
-@media(prefers-color-scheme:dark){:root{--ground:#0b0b0c;--surface:#151517;--raised:#1f1f22;--border:#2a2a2e;--rule:#232326;--control:#6e6e74;--text:#f5f5f5;--muted:#b4b4b4;--primary:#f5f5f5;--hue:#e0b347;--data-ink:#e6e6e6;--data-grey:#6e6e74;--positive:#3fc07a;--negative:#ff7b71;--warning-ink:#e3a94a;--warning-bg:#1f1a10;--warning-border:#4a3a17;--real:#ff7b71;--serie-pones:#5f8fd6;--serie-gana:#bd8a22;--efectivo:#4fb8ac;--button-label:#0b0b0c}}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--ground:#0b0b0c;--surface:#151517;--raised:#1f1f22;--border:#2a2a2e;--rule:#232326;--control:#6e6e74;--text:#f5f5f5;--muted:#b4b4b4;--primary:#f5f5f5;--hue:#e0b347;--data-ink:#e6e6e6;--data-grey:#6e6e74;--positive:#3fc07a;--negative:#ff7b71;--warning-ink:#e3a94a;--warning-bg:#1f1a10;--warning-border:#4a3a17;--real:#ff7b71;--serie-pones:#5f8fd6;--serie-gana:#bd8a22;--efectivo:#4fb8ac;--button-label:#0b0b0c}}
+:root[data-theme=dark]{--ground:#0b0b0c;--surface:#151517;--raised:#1f1f22;--border:#2a2a2e;--rule:#232326;--control:#6e6e74;--text:#f5f5f5;--muted:#b4b4b4;--primary:#f5f5f5;--hue:#e0b347;--data-ink:#e6e6e6;--data-grey:#6e6e74;--positive:#3fc07a;--negative:#ff7b71;--warning-ink:#e3a94a;--warning-bg:#1f1a10;--warning-border:#4a3a17;--real:#ff7b71;--serie-pones:#5f8fd6;--serie-gana:#bd8a22;--efectivo:#4fb8ac;--button-label:#0b0b0c;color-scheme:dark}
+:root[data-theme=light]{color-scheme:light}
 *{box-sizing:border-box}
 html,body{overflow-x:clip}
 body{margin:0;background:var(--ground);color:var(--text);font:15px/1.55 "Geist",system-ui,-apple-system,"Segoe UI",sans-serif}
@@ -194,6 +197,16 @@ main.wrap:has(.quiz),main.wrap:has(.reco){max-width:1120px}
 .por-ver .billete.chico{animation-play-state:paused}
 .por-ver.visto .billete.chico{animation-play-state:running}
 @media(prefers-reduced-motion:reduce){.por-ver,.por-ver .barra span,.por-ver .barra i{opacity:1;transform:none}}
+/* Botón de tema: luna en claro, sol en oscuro. */
+.topbar .tema{width:40px;min-height:40px;padding:0;display:inline-grid;place-items:center;background:transparent;color:var(--text);border:1px solid var(--border);border-radius:99px}
+.topbar .tema span{grid-area:1/1;transition:opacity 200ms ease,transform 300ms var(--ease-out)}
+.topbar .tema .luna{width:15px;height:15px;border-radius:50%;box-shadow:inset -5px -3px 0 0 currentColor}
+.topbar .tema .sol{width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:0 -7px 0 -2.5px currentColor,0 7px 0 -2.5px currentColor,7px 0 0 -2.5px currentColor,-7px 0 0 -2.5px currentColor,5px 5px 0 -2.5px currentColor,-5px -5px 0 -2.5px currentColor,5px -5px 0 -2.5px currentColor,-5px 5px 0 -2.5px currentColor}
+.topbar .tema .sol{opacity:0;transform:rotate(-90deg) scale(.6)}
+:root[data-theme=dark] .topbar .tema .luna{opacity:0;transform:rotate(90deg) scale(.6)}
+:root[data-theme=dark] .topbar .tema .sol{opacity:1;transform:none}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]) .topbar .tema .luna{opacity:0;transform:rotate(90deg) scale(.6)}:root:not([data-theme=light]) .topbar .tema .sol{opacity:1;transform:none}}
+body{transition:background-color 250ms ease,color 250ms ease}
 /* Movimiento: curvas propias, respuesta al presionar y entradas cortas (sin animar lo que se usa a cada rato). */
 :root{--ease-out:cubic-bezier(.23,1,.32,1)}
 button,a.btn,button.link,.tiempo .play{transition:transform 160ms var(--ease-out),background-color 160ms ease,border-color 160ms ease}
@@ -224,9 +237,34 @@ button:active,a.btn:active,button.link:active,.tiempo .play:active{transform:sca
   <nav aria-label="Principal">
     <a href="{% url 'simulador' %}"{% if request.path == '/' %} aria-current="page"{% endif %}>Simulador</a>
     <a href="{% url 'quiz' %}"{% if request.path == '/recomendador/' %} aria-current="page"{% endif %}>Quiz de perfil</a>
+    <button type="button" class="tema" id="tema" aria-label="Cambiar a tema oscuro">
+      <span class="luna" aria-hidden="true"></span>
+      <span class="sol" aria-hidden="true"></span>
+    </button>
   </nav>
 </header>
 <main class="wrap">{% block contenido %}{% endblock %}</main>
 {% block scripts %}{% endblock %}
+<script>
+(function () {
+  // Tema claro/oscuro: recuerda la elección en este navegador; sin elección sigue al sistema.
+  var boton = document.getElementById("tema"); if (!boton) return;
+  var raiz = document.documentElement, sistema = matchMedia("(prefers-color-scheme: dark)");
+  function actual() { return raiz.dataset.theme || (sistema.matches ? "dark" : "light"); }
+  function rotular() {
+    var oscuro = actual() === "dark";
+    boton.setAttribute("aria-label", oscuro ? "Cambiar a tema claro" : "Cambiar a tema oscuro");
+    boton.title = oscuro ? "Tema claro" : "Tema oscuro";
+  }
+  boton.addEventListener("click", function () {
+    var nuevo = actual() === "dark" ? "light" : "dark";
+    raiz.dataset.theme = nuevo;
+    try { localStorage.setItem("tema", nuevo === "dark" ? "oscuro" : "claro"); } catch (e) {}
+    rotular();
+  });
+  sistema.addEventListener("change", rotular);
+  rotular();
+})();
+</script>
 </body>
 </html>
