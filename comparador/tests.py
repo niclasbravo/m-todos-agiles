@@ -134,6 +134,32 @@ class Simulador(SimpleTestCase):
         r = self.client.get("/?destacar=APV%20r%C3%A9gimen%20A&destacar=Cuenta%20Vista%20M%C3%A1s%20(Banco%20Consorcio)")
         self.assertContains(r, "Recomendada para ti", count=2)
 
+    def test_mapa_3d_termina_en_los_mismos_montos_que_las_barras(self):
+        r = self.client.get("/", {"inicial": 1_000_000, "aporte": 100_000, "plazo": 5, "unidad": "anios", "inflacion": 3})
+        escena, filas = r.context["escena"], r.context["filas"]
+        self.assertEqual((escena["meses"][0], escena["meses"][-1]), (0, 60))
+        for inst, f in zip(escena["inst"], filas):
+            self.assertEqual(inst["puntos"][-1][1], round(f["final"]))
+            self.assertEqual(inst["puntos"][-1][2], round(f["real"]))
+        self.assertContains(r, 'id="datos-mapa"')
+
+    def test_formato_json_entrega_la_escena(self):
+        r = self.client.get("/", {"inicial": 1_000_000, "aporte": 100_000, "plazo": 5, "unidad": "anios", "inflacion": 3,
+                                  "formato": "json"})
+        self.assertEqual(r.status_code, 200)
+        datos = r.json()
+        self.assertEqual(len(datos["escena"]["inst"]), 7)
+        self.assertEqual(datos["meses"], 60)
+        filas = {f["nombre"]: f for f in comparar(1_000_000, 100_000, 60, 3)}
+        for inst in datos["escena"]["inst"]:
+            self.assertEqual(inst["puntos"][-1][1], round(filas[inst["nombre"]]["final"]))
+
+    def test_formato_json_con_errores_responde_400(self):
+        r = self.client.get("/", {"inicial": 0, "aporte": 0, "plazo": 5, "unidad": "anios", "inflacion": 3,
+                                  "formato": "json"})
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("errores", r.json())
+
 
 class Quiz(SimpleTestCase):
     RESP = {"monto": 3000000, "ingresos": "bajos", "plazo": "1_3a", "caida": "vender", "colchon": "no"}
