@@ -266,6 +266,16 @@ function iniciar() {
   const vidrioB = pieza(0.62, 0.12, 0.48, vidrio, 0.03); vidrioB.position.set(-0.25, 0.52, 0);
   const franjaB = pieza(1.72, 0.07, 0.64, mat(0xf2b937), 0.03); franjaB.position.y = 0.2;
   bote.add(casco, cabina, vidrioB, franjaB); scene.add(bote);
+  // Un velero que navega lento detrás de la isla.
+  const velero = new THREE.Group();
+  const cascoV = pieza(1.3, 0.28, 0.46, blanco, 0.12); cascoV.position.y = 0.1;
+  const mastil = pieza(0.05, 1.3, 0.05, gris, 0.02); mastil.position.set(0.05, 0.85, 0);
+  const formaVela = new THREE.Shape(); formaVela.moveTo(0, 0); formaVela.lineTo(0.75, 0); formaVela.lineTo(0, 1.1); formaVela.lineTo(0, 0);
+  const vela = new THREE.Mesh(new THREE.ShapeGeometry(formaVela), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8, side: THREE.DoubleSide }));
+  vela.position.set(0.1, 0.32, 0); vela.castShadow = true;
+  const banderin = new THREE.Mesh(new THREE.ShapeGeometry((() => { const f = new THREE.Shape(); f.moveTo(0, 0); f.lineTo(0.28, -0.08); f.lineTo(0, -0.16); return f; })()), new THREE.MeshStandardMaterial({ color: 0xf2b937, side: THREE.DoubleSide }));
+  banderin.position.set(0.07, 1.5, 0);
+  velero.add(cascoV, mastil, vela, banderin); scene.add(velero);
   const geoPersona = new THREE.CapsuleGeometry(0.075, 0.16, 4, 8);
   const gente = new THREE.InstancedMesh(geoPersona, mat(0xffffff), 12);
   gente.castShadow = true; scene.add(gente);
@@ -294,7 +304,9 @@ function iniciar() {
       nubes.forEach((n) => { n.position.x += n.userData.vel * dt; if (n.position.x > 16) n.position.x = -16; });
     }
     const bx = quieto ? 4 : ((t * 1.1) % 34) - 17;
-    bote.position.set(bx, -0.28 + Math.sin(t * 1.6) * 0.04, 8.1);
+    bote.position.set(bx, -0.28 + Math.sin(t * 1.6) * 0.04, 7.1);
+    velero.position.set(quieto ? -4 : -14 + ((t * 0.45) % 28), -0.3 + Math.sin(t * 1.2 + 1) * 0.05, -7.3);
+    velero.rotation.z = Math.sin(t * 1.1) * 0.06;
     bote.rotation.z = Math.sin(t * 1.3) * 0.04; bote.rotation.x = Math.sin(t * 1.1) * 0.03;
     caminantes.forEach((c, k) => {
       if (!quieto) { c.x += c.dir * c.vel * dt; if (c.x > 11.4) c.x = -11.4; if (c.x < -11.4) c.x = 11.4; }
