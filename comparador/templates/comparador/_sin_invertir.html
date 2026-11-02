@@ -47,7 +47,7 @@ function iniciar() {
   caja.closest(".nada").classList.add("con-3d");
   const quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const meses = +caja.dataset.meses, pctFinal = parseFloat(caja.dataset.pct) / 100;
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
   renderer.setClearColor(0x000000, 0);
   renderer.toneMapping = THREE.NeutralToneMapping;
   renderer.shadowMap.enabled = true;
@@ -134,9 +134,11 @@ function iniciar() {
   }
   addEventListener("scroll", leerScroll, { passive: true }); leerScroll();
 
-  let antes = performance.now(), ultimoMes = -1;
+  let antes = performance.now(), ultimoMes = -1, enPantalla = false;
+  new IntersectionObserver((e) => { enPantalla = e[0].isIntersecting; }).observe(caja);
   renderer.setAnimationLoop(() => {
     const ahora = performance.now(), dt = Math.min(0.05, (ahora - antes) / 1000), t = ahora / 1000; antes = ahora;
+    if (!enPantalla || document.hidden) return;
     const m = Math.round(progreso * meses), poder = Math.pow(pctFinal, m / meses);
     const quedan = Math.max(1, Math.round(poder * 10 - 1e-9));
     productos.forEach((p, k) => {

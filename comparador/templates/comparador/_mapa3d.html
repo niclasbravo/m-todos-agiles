@@ -151,7 +151,7 @@ function iniciar() {
   let renderer;
   try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); } catch (e) { return; }
   const quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
   renderer.setClearColor(0x000000, 0);
   renderer.toneMapping = THREE.NeutralToneMapping;
   renderer.shadowMap.enabled = true;
@@ -165,7 +165,7 @@ function iniciar() {
   const sol = new THREE.DirectionalLight(0xffffff, 2.4);
   sol.position.set(-8, 16, 10);
   sol.castShadow = true;
-  sol.shadow.mapSize.set(2048, 2048);
+  sol.shadow.mapSize.set(1024, 1024);
   sol.shadow.radius = 5;
   sol.shadow.bias = -0.0005;
   Object.assign(sol.shadow.camera, { left: -16, right: 16, top: 12, bottom: -12, near: 1, far: 50 });
@@ -254,7 +254,7 @@ function iniciar() {
   arbol(6.2, 5.1, 0.75); arbol(7.2, 5.4, 0.6);
 
   // ---------- Mundo vivo: agua con olas, muelle, bote, gente y nubes ----------
-  const geoAgua = new THREE.PlaneGeometry(80, 56, 80, 56); geoAgua.rotateX(-Math.PI / 2);
+  const geoAgua = new THREE.PlaneGeometry(80, 56, 56, 40); geoAgua.rotateX(-Math.PI / 2);
   const agua = new THREE.Mesh(geoAgua, mat(0xbcdcec, { roughness: 0.35, metalness: 0.05, flatShading: true }));
   agua.position.y = -0.34; agua.receiveShadow = true; scene.add(agua);
   const aguaBase = geoAgua.attributes.position.array.slice();
@@ -312,7 +312,7 @@ function iniciar() {
         const x = aguaBase[k], z = aguaBase[k + 2];
         a[k + 1] = Math.sin(x * 0.55 + z * 0.2 + t * 1.3) * 0.085 + Math.cos(z * 0.7 - x * 0.15 + t * 0.9) * 0.06;
       }
-      geoAgua.attributes.position.needsUpdate = true; geoAgua.computeVertexNormals();
+      geoAgua.attributes.position.needsUpdate = true; // agua facetada: la GPU calcula las normales
       nubes.forEach((n) => { n.position.x += n.userData.vel * dt; if (n.position.x > 16) n.position.x = -16; });
       const respira = 1 + Math.sin(t * 1.3) * 0.012;
       espuma.scale.set(respira, respira, 1); espuma.material.opacity = 0.45 + Math.sin(t * 1.3) * 0.15;
@@ -391,6 +391,13 @@ function iniciar() {
   ubicar();
   new ResizeObserver(ubicar).observe(escena);
 
+  function medirPines() { // una sola lectura de tamaños cuando cambia el texto, no en cada cuadro
+    for (const el of capa.children) { el._w = el.offsetWidth; el._h = el.offsetHeight; }
+  }
+  // Solo se dibuja cuando la escena está en pantalla y la pestaña visible.
+  let enPantalla = true;
+  new IntersectionObserver((e) => { enPantalla = e[0].isIntersecting; }, { threshold: 0.01 }).observe(escena);
+
   // ---------- Estado en el tiempo ----------
   function valor(d, f) {
     const a = Math.floor(f), b = Math.min(cortes - 1, a + 1), u = f - a;
@@ -456,6 +463,7 @@ function iniciar() {
       pin.classList.toggle("on", i === sel);
     });
     pinCasa.innerHTML = `<b>Tu casa</b>${m === 0 ? "Aporte inicial" : `Aporte del mes ${m}`}`;
+    medirPines();
     hitos.querySelectorAll("span").forEach((s) => s.classList.toggle("on", +s.dataset.m <= m));
     sucursales.forEach((su, i) => su.partes[1].material.emissive?.setHex(i === sel ? 0x222222 : 0x000000));
   }
@@ -699,11 +707,13 @@ function iniciar() {
     el.addEventListener("click", () => irZona(z)); capa.append(el);
     return { z, el };
   });
+  medirPines(); addEventListener("resize", medirPines);
 
   const v = new THREE.Vector3();
   let antes = performance.now(), ultimo = 0;
   renderer.setAnimationLoop(() => {
     const ms = performance.now(), dt = Math.min(0.05, (ms - antes) / 1000); antes = ms;
+    if (!enPantalla || document.hidden) return;
     if (reproduciendo) {
       momento = Math.min(cortes - 1, ((ms - t0) / 1000 / DURA) * (cortes - 1));
       rango.value = Math.round(momento);
@@ -736,9 +746,9 @@ function iniciar() {
     const w = escena.clientWidth, h = escena.clientHeight;
     const poner = (el, x, y, z) => {
       v.set(x, y, z).project(camara);
-      const medio = el.offsetWidth / 2 + 20; // la tarjeta nunca se sale de la escena
+      const medio = (el._w || 0) / 2 + 20; // la tarjeta nunca se sale de la escena
       el.style.left = Math.min(w - medio, Math.max(medio, ((v.x + 1) / 2) * w)) + "px";
-      el.style.top = Math.max(el.offsetHeight + 8, ((1 - v.y) / 2) * h) + "px";
+      el.style.top = Math.max((el._h || 0) + 8, ((1 - v.y) / 2) * h) + "px";
     };
     inst.forEach((d, i) => {
       const su = sucursales[i];
