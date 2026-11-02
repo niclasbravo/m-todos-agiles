@@ -1,0 +1,388 @@
+<section class="mapa hero" id="mapa" aria-labelledby="mapa-titulo">
+  <div class="escena" id="escena" aria-hidden="true"><div class="tarjetas" id="tarjetas"></div></div>
+  <div class="hero-card">
+    <p class="marca3d" id="marca3d" aria-label="¿Dónde ahorro?"><span class="sig">¿</span>Dónde ahorro<span class="sig">?</span></p>
+    <h1 id="mapa-titulo">¿Dónde conviene partir a ahorrar?</h1>
+    <p class="hero-lead">Compara cuánto tendrías con cada opción disponible en Chile. Ingresa cuánto tienes, cuánto puedes aportar al mes y por cuánto tiempo.</p>
+    <p class="hero-cta"><a class="btn" href="#simular">Simular con mis números</a><a class="btn sec" href="{% url 'quiz' %}">Responde el quiz</a></p>
+  </div>
+  <div class="kpis" id="kpis"></div>
+  <p class="leyenda mapa-ley">
+    <span><i class="sw" style="background:#e9edf2;outline:1px solid #b8c0cc"></i>Pallets que pones tú</span>
+    <span><i class="sw" style="background:#f2b937"></i>Pallets que gana tu plata</span>
+  </p>
+  <button type="button" class="ver-todo" id="ver-todo" hidden>Ver todo el mapa</button>
+  <div class="tiempo">
+    <button type="button" class="play" id="play" aria-label="Reproducir el ahorro desde hoy">▶</button>
+    <div class="linea">
+      <input type="range" id="anio" min="0" max="12" step="1" value="0" aria-label="Momento del ahorro">
+      <div class="hitos" id="hitos"></div>
+    </div>
+  </div>
+</section>
+<style>
+.hero{position:relative;width:100vw;margin:-24px 0 32px calc(50% - 50vw);height:max(620px,calc(100vh - 57px));background:#eef1f5;border-bottom:1px solid var(--border);overflow:hidden}
+@media(prefers-color-scheme:dark){.hero{background:#1a1c20}}
+.hero .escena{position:absolute;inset:0;touch-action:pan-y;cursor:pointer}
+.escena canvas{display:block;width:100%;height:100%}
+.tarjetas{position:absolute;inset:0;pointer-events:none}
+.hero-card,.kpis,.tiempo,.mapa-ley,.ver-todo{position:absolute;z-index:3;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 10px 30px rgba(15,23,42,.10)}
+.hero-card{left:max(24px,calc(50vw - 560px));bottom:112px;width:min(460px,calc(100vw - 48px));padding:26px 26px 22px;animation:subir 600ms var(--ease-out) both}
+.marca3d{margin:0 0 10px;font:800 clamp(46px,5.6vw,76px)/.92 "Bricolage Grotesque",Geist,system-ui,sans-serif;letter-spacing:-.035em;color:var(--text);
+  text-shadow:1px 1px 0 #e3a92b,2px 2px 0 #d99a00,3px 3px 0 #cf9200,4px 4px 0 #c48a00,5px 5px 0 #b98200,6px 6px 0 #ad7900,7px 8px 18px rgba(0,0,0,.18);
+  transform:perspective(700px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transform-origin:30% 60%;will-change:transform}
+.marca3d .sig{color:#d99a00;text-shadow:1px 1px 0 #b98200,2px 2px 0 #a87300,3px 3px 0 #976800,4px 5px 12px rgba(0,0,0,.18)}
+.hero h1{font-size:20px;margin:0 0 8px;max-width:none}
+.hero-lead{margin:0 0 18px;color:var(--muted);font-size:14px}
+.hero-cta{display:flex;flex-wrap:wrap;gap:10px;margin:0}
+.hero-cta .btn{margin:0}
+.kpis{top:20px;right:max(24px,calc(50vw - 560px));display:grid;grid-template-columns:repeat(4,minmax(0,172px));animation:subir 600ms 120ms var(--ease-out) both}
+.kpi{padding:12px 16px;min-width:0}
+.kpi+.kpi{border-left:1px solid var(--border)}
+.kpi span{display:block;font-size:12px;color:var(--muted)}
+.kpi strong{display:block;font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi small{display:block;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mapa-ley{top:20px;left:max(24px,calc(50vw - 560px));margin:0;padding:10px 14px;font-size:12px}
+.ver-todo{top:96px;right:max(24px,calc(50vw - 560px));width:auto;min-height:40px;padding:8px 14px;color:var(--text);font-weight:600;font-size:13px}
+.ver-todo[hidden]{display:none}
+.tiempo{left:50%;bottom:24px;transform:translateX(-50%);width:min(720px,calc(100vw - 48px));display:flex;align-items:center;gap:16px;padding:10px 18px 12px;animation:subir 600ms 220ms var(--ease-out) both}
+.tiempo .play{width:44px;min-height:44px;padding:0;flex:none;font-size:16px}
+.linea{flex:1;min-width:0}
+.linea input[type=range]{width:100%;height:26px;border:0;padding:0;background:transparent;accent-color:#d99a00}
+.hitos{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.hitos span.on{color:var(--text);font-weight:600}
+.pin{position:absolute;transform:translate(-50%,-100%);background:#fff;color:#0a0a0a;border-radius:8px;padding:3px 8px;font-size:12px;font-weight:700;line-height:1.3;white-space:nowrap;box-shadow:0 4px 14px rgba(15,23,42,.14);font-variant-numeric:tabular-nums;transition:transform 220ms var(--ease-out),padding 220ms var(--ease-out)}
+.pin b{display:none;font-size:13px}
+.pin .vivo{display:none;color:#5f6368;margin-top:2px;font-weight:400}
+.pin .vivo i{display:inline-block;width:6px;height:6px;border-radius:50%;background:#e5484d;margin-right:4px;vertical-align:1px;animation:latido 1.6s ease-in-out infinite}
+.pin.on{transform:translate(-50%,-100%) scale(1.08);z-index:2;outline:2px solid #f2b937;padding:8px 12px;font-weight:400}
+.pin.on b,.pin.on .vivo,.pin.casa b{display:block}
+.pin.on .monto{font-weight:700;font-size:15px}
+.pin.casa{background:#0a0a0a;color:#fff;font-weight:400}
+@keyframes subir{from{opacity:0;transform:translateY(14px)}}
+.tiempo{animation-name:subirc}
+@keyframes subirc{from{opacity:0;transform:translate(-50%,14px)}}
+@keyframes latido{50%{opacity:.35}}
+@media(max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,150px))}.kpi:nth-child(3){border-left:0}.kpi:nth-child(n+3){border-top:1px solid var(--border)}.ver-todo{top:auto;bottom:100px}}
+@media(max-width:700px){
+  .hero{height:auto;margin-top:-24px}
+  .hero .escena{position:relative;height:380px}
+  .hero-card,.kpis,.tiempo,.mapa-ley{position:static;transform:none;width:auto;margin:12px 16px;box-shadow:none;animation:none}
+  .mapa-ley{display:flex}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ver-todo{top:12px;right:16px;bottom:auto}
+  .pin:not(.on):not(.casa){display:none}
+  .marca3d{font-size:48px}
+}
+@media(prefers-reduced-motion:reduce){.hero-card,.kpis,.tiempo{animation:none}.pin .vivo i{animation:none}.marca3d{transform:none}}
+</style>
+{{ escena|json_script:"datos-mapa" }}
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/"}}
+</script>
+<script type="module">
+// Maqueta isométrica estilo "dashboard 3D": tu casa a la izquierda y una sucursal por instrumento.
+// En el patio de cada sucursal se apilan pallets (blancos = lo que pones, dorados = la ganancia)
+// según la evolución real que calcula el servidor. Sin WebGL, la sección queda oculta.
+import * as THREE from "three";
+import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+
+const datos = JSON.parse(document.getElementById("datos-mapa")?.textContent || "null");
+const caja = document.getElementById("mapa");
+if (datos && datos.inst.length && caja) iniciar();
+
+function iniciar() {
+  const $ = (id) => document.getElementById(id);
+  const escena = $("escena"), capa = $("tarjetas"), kpis = $("kpis"), rango = $("anio"), hitos = $("hitos"), play = $("play");
+  const verTodo = $("ver-todo"), marca = $("marca3d");
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); } catch (e) { return; }
+  const quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setClearColor(0x000000, 0);
+  renderer.toneMapping = THREE.NeutralToneMapping;
+  renderer.shadowMap.enabled = true;
+  renderer.debug.checkShaderErrors = false; // evita avisos del compilador de la GPU en la consola
+  escena.prepend(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+  scene.environmentIntensity = 0.35;
+  const camara = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 200);
+  const sol = new THREE.DirectionalLight(0xffffff, 2.4);
+  sol.position.set(-8, 16, 10);
+  sol.castShadow = true;
+  sol.shadow.mapSize.set(2048, 2048);
+  sol.shadow.radius = 5;
+  sol.shadow.bias = -0.0005;
+  Object.assign(sol.shadow.camera, { left: -16, right: 16, top: 12, bottom: -12, near: 1, far: 50 });
+  scene.add(sol, new THREE.HemisphereLight(0xffffff, 0xd6dde6, 1.6));
+
+  // ---------- Piezas (aristas redondeadas, materiales tipo arcilla) ----------
+  const mat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.75, metalness: 0, ...extra });
+  const pieza = (w, h, d, m, r = 0.06) => {
+    const o = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 3, Math.min(r, w / 2, h / 2, d / 2)), m);
+    o.castShadow = o.receiveShadow = true; return o;
+  };
+  const blanco = mat(0xffffff), gris = mat(0xdfe4ea), asfalto = mat(0xc9d0d9), vidrio = mat(0x24364f, { roughness: 0.25, metalness: 0.2 });
+  const menta = mat(0x8fd6bd), tronco = mat(0xb08a63), pasto = mat(0xe6ece4);
+
+  const isla = pieza(26, 0.6, 13, mat(0xf4f6f8), 0.3); isla.position.y = -0.3; scene.add(isla);
+  const calle = pieza(23, 0.08, 1.4, asfalto, 0.03); calle.position.set(-0.5, 0.04, 0); scene.add(calle);
+  for (let x = -11.5; x < 11; x += 1.4) { const l = pieza(0.6, 0.02, 0.08, blanco, 0.01); l.position.set(x, 0.09, 0); scene.add(l); }
+
+  function arbol(x, z, s = 1) {
+    const t = pieza(0.12 * s, 0.4 * s, 0.12 * s, tronco, 0.03); t.position.set(x, 0.2 * s, z);
+    const c = new THREE.Mesh(new THREE.IcosahedronGeometry(0.42 * s, 2), menta); c.position.set(x, 0.65 * s, z);
+    c.castShadow = c.receiveShadow = true; scene.add(t, c);
+  }
+  [[-12, -5.5], [-11, 5.4], [-7.5, -5.6], [-3.5, 5.6], [0.5, -5.7], [4.5, 5.6], [8.5, -5.6], [11.6, 5], [12, -4.5], [11.8, 0.2], [-12.2, 0.4]]
+    .forEach(([x, z], i) => arbol(x, z, 0.8 + (i % 3) * 0.15));
+
+  // Tu casa: de aquí sale el aporte de cada mes.
+  const casa = new THREE.Group();
+  const cuerpo = pieza(1.6, 1, 1.4, blanco); cuerpo.position.y = 0.5;
+  const techo = new THREE.Mesh(new THREE.ConeGeometry(1.25, 0.75, 4), mat(0x2b2f36)); techo.position.y = 1.37; techo.rotation.y = Math.PI / 4;
+  techo.castShadow = true;
+  const puerta = pieza(0.32, 0.55, 0.05, mat(0xf2b937), 0.02); puerta.position.set(0, 0.28, 0.72);
+  casa.add(cuerpo, techo, puerta); casa.position.set(-10.2, 0, -2.4); scene.add(casa);
+  arbol(-9, -3.6, 0.7);
+
+  // ---------- Sucursales ----------
+  const colores = { banco: 0x2f6fde, fondo: 0x14a38b, apv: 0xe0773b };
+  const tipo = (nombre) => /APV/.test(nombre) ? "apv" : /Principal/.test(nombre) ? "fondo" : "banco";
+  const inst = datos.inst, n = inst.length, cortes = datos.meses.length;
+  const lugares = [[-6, -2.6], [-2, -2.6], [2, -2.6], [6, -2.6], [-4, 2.6], [0, 2.6], [4, 2.6], [8.6, 2.6]].slice(0, n);
+  const sucursales = inst.map((d, i) => {
+    const [x, z] = lugares[i], frente = z > 0 ? -1 : 1, color = colores[tipo(d.nombre)];
+    const g = new THREE.Group(); g.position.set(x, 0, z);
+    const lote = pieza(3.5, 0.1, 3, pasto, 0.05); lote.position.y = 0.05; g.add(lote);
+    const alto = 0.9 + (i % 3) * 0.25;
+    const edificio = pieza(1.5, alto, 1.3, blanco); edificio.position.set(-0.85, 0.1 + alto / 2, -0.3 * frente);
+    const losa = pieza(1.62, 0.12, 1.42, gris, 0.03); losa.position.set(-0.85, 0.16 + alto, -0.3 * frente);
+    const banda = pieza(1.52, 0.18, 1.32, mat(color), 0.03); banda.position.set(-0.85, 0.1 + alto - 0.2, -0.3 * frente);
+    const ventanas = pieza(1.1, alto * 0.38, 0.04, vidrio, 0.015); ventanas.position.set(-0.85, 0.1 + alto * 0.42, -0.3 * frente + 0.66 * frente);
+    const letrero = pieza(0.08, 0.9, 0.08, gris, 0.02); letrero.position.set(0.0, 0.55, 0.95 * frente);
+    const placa = pieza(0.5, 0.3, 0.06, mat(color), 0.03); placa.position.set(0.0, 1.05, 0.95 * frente);
+    const patio = pieza(1.7, 0.04, 1.7, gris, 0.03); patio.position.set(0.75, 0.12, -0.25 * frente);
+    edificio.userData.i = i; ventanas.userData.i = i; banda.userData.i = i;
+    g.add(edificio, losa, banda, ventanas, letrero, placa, patio);
+    scene.add(g);
+    return { g, edificio, color, frente, alto, partes: [edificio, banda, ventanas, losa] };
+  });
+
+  // Pallets instanciados: 3 x 3 por capa en el patio.
+  const MAXP = 45, PP = 0.42, PH = 0.22;
+  const maximo = Math.max(...inst.map((d) => d.puntos[cortes - 1][1])) || 1;
+  const geoPallet = new RoundedBoxGeometry(PP * 0.9, PH * 0.88, PP * 0.9, 2, 0.035);
+  const mBase = new THREE.InstancedMesh(geoPallet, mat(0xe9edf2), n * MAXP);
+  const mOro = new THREE.InstancedMesh(geoPallet, mat(0xf2b937, { roughness: 0.35, metalness: 0.55 }), n * MAXP);
+  [mBase, mOro].forEach((m) => { m.castShadow = m.receiveShadow = true; m.count = 0; scene.add(m); });
+
+  // Camiones de valores que recorren la calle (el aporte de cada mes).
+  const camiones = [0, 1, 2].map((k) => {
+    const g = new THREE.Group();
+    const caja3 = pieza(0.95, 0.5, 0.48, blanco, 0.06); caja3.position.set(-0.12, 0.38, 0);
+    const cabina = pieza(0.38, 0.4, 0.46, mat(0x2b2f36), 0.06); cabina.position.set(0.5, 0.33, 0);
+    const franja = pieza(0.96, 0.08, 0.49, mat(0xf2b937), 0.02); franja.position.set(-0.12, 0.3, 0);
+    g.add(caja3, cabina, franja);
+    g.userData = { x: -10 + k * 7, vel: 1.6 + k * 0.25, z: k % 2 ? 0.32 : -0.32, dir: k % 2 ? -1 : 1 };
+    g.rotation.y = g.userData.dir > 0 ? 0 : Math.PI;
+    scene.add(g); return g;
+  });
+
+  // ---------- Tarjetas flotantes (HTML) ----------
+  const pines = inst.map((d) => {
+    const p = document.createElement("div"); p.className = "pin";
+    p.innerHTML = `<b></b><span class="monto"></span><span class="vivo"><i></i><span></span></span>`;
+    capa.append(p); return p;
+  });
+  const pinCasa = document.createElement("div"); pinCasa.className = "pin casa"; capa.append(pinCasa);
+
+  // ---------- Cámara isométrica (con foco y zoom que se animan al elegir una sucursal) ----------
+  const BASE = new THREE.Vector3(7, 13, 21), foco = new THREE.Vector3(), focoObj = new THREE.Vector3();
+  let zoomObj = 1, zoomBase = 1;
+  function ubicar() {
+    const w = escena.clientWidth, h = escena.clientHeight;
+    renderer.setSize(w, h, false);
+    const antes = zoomBase; zoomBase = w < 700 ? 2.1 : 1;
+    if (zoomObj === antes) zoomObj = zoomBase;
+    camara.position.copy(BASE).add(foco);
+    camara.lookAt(foco);
+    camara.updateMatrixWorld();
+    const inv = camara.matrixWorldInverse, v = new THREE.Vector3();
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (let k = 0; k < 8; k++) {
+      v.set(k & 1 ? 12.6 : -12.6, k & 2 ? 2.6 : -0.6, k & 4 ? 6.2 : -6.2).applyMatrix4(inv);
+      x0 = Math.min(x0, v.x); x1 = Math.max(x1, v.x); y0 = Math.min(y0, v.y); y1 = Math.max(y1, v.y);
+    }
+    const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+    let mw = (x1 - x0) / 2 * 0.98, mh = (y1 - y0) / 2 * 1.04;
+    if (mw / mh > w / h) mh = mw / (w / h); else mw = mh * (w / h);
+    const corre = w > 900 ? mw * 0.3 : 0, baja = w > 700 ? mh * 0.06 : 0;
+    Object.assign(camara, { left: cx - mw - corre, right: cx + mw - corre, top: cy + mh - baja, bottom: cy - mh - baja });
+    camara.updateProjectionMatrix();
+  }
+  ubicar();
+  new ResizeObserver(ubicar).observe(escena);
+
+  // ---------- Estado en el tiempo ----------
+  function valor(d, f) {
+    const a = Math.floor(f), b = Math.min(cortes - 1, a + 1), u = f - a;
+    return d.puntos[a].map((x, k) => x + (d.puntos[b][k] - x) * u);
+  }
+  function mes(f) {
+    const a = Math.floor(f), b = Math.min(cortes - 1, a + 1);
+    return Math.round(datos.meses[a] + (datos.meses[b] - datos.meses[a]) * (f - a));
+  }
+  const total = datos.meses[cortes - 1];
+  const marcas = total >= 24 ? Array.from({ length: Math.floor(total / 12) + 1 }, (_, k) => k * 12) : [0, total];
+  if (marcas[marcas.length - 1] !== total) marcas.push(total);
+  hitos.innerHTML = marcas.map((m) => `<span data-m="${m}">${m === 0 ? "Hoy" : m % 12 === 0 ? `Año ${m / 12}` : `${m} meses`}</span>`).join("");
+
+  let sel = inst.reduce((b, d, i) => (d.puntos[cortes - 1][1] > inst[b].puntos[cortes - 1][1] ? i : b), 0);
+  let momento = quieto ? cortes - 1 : 0;
+  const caidas = inst.map(() => ({ visibles: 0, t: new Array(MAXP).fill(-1) }));
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s1 = new THREE.Vector3(1, 1, 1), p = new THREE.Vector3();
+
+  function construir(f, ahora) {
+    let nb = 0, no = 0;
+    inst.forEach((d, i) => {
+      const [aportado, nominal, real] = valor(d, f);
+      const tot = Math.max(1, Math.round((nominal / maximo) * MAXP));
+      const base = Math.min(tot, Math.max(1, Math.round((aportado / maximo) * MAXP)));
+      const c = caidas[i], su = sucursales[i];
+      for (let k = c.visibles; k < tot; k++) c.t[k] = quieto ? -10 : ahora + (k - c.visibles) * 0.04;
+      c.visibles = tot;
+      for (let k = 0; k < tot; k++) {
+        const u = Math.min(1, Math.max(0, (ahora - c.t[k]) / 0.35));
+        if (u <= 0) continue;
+        const capaN = Math.floor(k / 9), j = k % 9;
+        const baja = (1 - u) * (1 - u) * 1.6;
+        p.set(su.g.position.x + 0.75 + ((j % 3) - 1) * PP, 0.14 + PH / 2 + capaN * PH + baja, su.g.position.z - 0.25 * su.frente + (Math.floor(j / 3) - 1) * PP);
+        m4.compose(p, q, s1);
+        if (k < base) mBase.setMatrixAt(nb++, m4); else mOro.setMatrixAt(no++, m4);
+      }
+      d.ahora = { aportado, nominal, real, capas: Math.ceil(tot / 9) };
+    });
+    mBase.count = nb; mOro.count = no;
+    mBase.instanceMatrix.needsUpdate = mOro.instanceMatrix.needsUpdate = true;
+  }
+
+  function textos(f) {
+    const m = mes(f);
+    const mejor = inst.reduce((b, d) => (d.ahora.nominal > b.ahora.nominal ? d : b), inst[0]);
+    const a = inst[0].ahora.aportado;
+    kpis.innerHTML = [
+      ["Lo que pones", clp(a), m === 0 ? "Monto inicial" : `En ${m} meses`],
+      ["Mejor opción", clp(mejor.ahora.nominal), mejor.nombre.split(" (")[0]],
+      ["Ganancia de la mejor", clp(mejor.ahora.nominal - a), `${((mejor.ahora.nominal / a - 1) * 100).toFixed(1).replace(".", ",")}% sobre lo puesto`],
+      ["Valor real de la mejor", clp(mejor.ahora.real), "En pesos de hoy"],
+    ].map(([t, v, s]) => `<div class="kpi"><span>${t}</span><strong>${v}</strong><small>${s}</small></div>`).join("");
+    inst.forEach((d, i) => {
+      const pin = pines[i];
+      pin.querySelector("b").textContent = d.nombre.split(" (")[0];
+      pin.querySelector(".monto").textContent = corto(d.ahora.nominal);
+      pin.querySelector(".vivo span").textContent = `Ganancia ${corto(d.ahora.nominal - d.ahora.aportado)} · Real ${corto(d.ahora.real)} · Riesgo ${d.riesgo}`;
+      pin.classList.toggle("on", i === sel);
+    });
+    pinCasa.innerHTML = `<b>Tu casa</b>${m === 0 ? "Aporte inicial" : `Aporte del mes ${m}`}`;
+    hitos.querySelectorAll("span").forEach((s) => s.classList.toggle("on", +s.dataset.m <= m));
+    sucursales.forEach((su, i) => su.partes[1].material.emissive?.setHex(i === sel ? 0x222222 : 0x000000));
+  }
+
+  // ---------- Tiempo ----------
+  rango.max = cortes - 1;
+  let reproduciendo = false, t0 = 0;
+  const DURA = 6;
+  const reproducir = () => { if (quieto) return; reproduciendo = true; t0 = performance.now(); };
+  rango.addEventListener("input", () => { reproduciendo = false; momento = +rango.value; textos(momento); });
+  play.addEventListener("click", reproducir);
+  construir(momento, performance.now() / 1000); textos(momento); rango.value = Math.round(momento);
+  new IntersectionObserver((e, o) => { if (e[0].isIntersecting) { reproducir(); o.disconnect(); } }, { threshold: 0.35 }).observe(escena);
+
+  // ---------- Elegir sucursal ----------
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+  const objetivos = sucursales.flatMap((su) => [su.edificio, su.partes[1], su.partes[2]]);
+  let enfocado = false;
+  function tocar(ev) {
+    const r = renderer.domElement.getBoundingClientRect();
+    ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+    ray.setFromCamera(ndc, camara);
+    const hit = ray.intersectObjects(objetivos)[0];
+    return hit ? hit.object.userData.i : -1;
+  }
+  function seleccionar(i) {
+    if (i === sel) return;
+    sel = i; sucursales[i].salto = performance.now() / 1000; textos(momento);
+  }
+  function enfocar(i) {
+    seleccionar(i); enfocado = true;
+    focoObj.set(sucursales[i].g.position.x * 0.85, 0, sucursales[i].g.position.z * 0.6);
+    zoomObj = zoomBase * 1.8; verTodo.hidden = false;
+  }
+  function soltar() { enfocado = false; focoObj.set(0, 0, 0); zoomObj = zoomBase; verTodo.hidden = true; }
+  renderer.domElement.addEventListener("pointermove", (ev) => { if (!enfocado) { const i = tocar(ev); if (i >= 0) seleccionar(i); } });
+  renderer.domElement.addEventListener("click", (ev) => { const i = tocar(ev); if (i >= 0) enfocar(i); else if (enfocado) soltar(); });
+  verTodo.addEventListener("click", soltar);
+  addEventListener("keydown", (ev) => { if (ev.key === "Escape" && enfocado) soltar(); });
+
+  // Logotipo 3D: se inclina hacia el puntero con un resorte suave.
+  let mx = 0, my = 0, rx = 0, ry = 0, vrx = 0, vry = 0;
+  if (!quieto && matchMedia("(hover: hover)").matches) caja.addEventListener("pointermove", (ev) => {
+    mx = (ev.clientX / innerWidth - 0.5) * 2; my = (ev.clientY / innerHeight - 0.5) * 2;
+  });
+
+  const v = new THREE.Vector3();
+  let antes = performance.now(), ultimo = 0;
+  renderer.setAnimationLoop(() => {
+    const ms = performance.now(), dt = Math.min(0.05, (ms - antes) / 1000); antes = ms;
+    if (reproduciendo) {
+      momento = Math.min(cortes - 1, ((ms - t0) / 1000 / DURA) * (cortes - 1));
+      rango.value = Math.round(momento);
+      if (momento >= cortes - 1) reproduciendo = false;
+      if (ms - ultimo > 150 || !reproduciendo) { ultimo = ms; textos(momento); }
+    }
+    construir(momento, ms / 1000);
+    camiones.forEach((c) => {
+      const u = c.userData;
+      if (!quieto) { u.x += u.dir * u.vel * dt; if (u.x > 11) u.x = -11; if (u.x < -11) u.x = 11; }
+      c.position.set(u.x, 0.08, u.z);
+    });
+    const k = quieto ? 1 : 1 - Math.pow(0.002, dt);
+    foco.lerp(focoObj, k);
+    camara.zoom += (zoomObj - camara.zoom) * k;
+    camara.position.copy(BASE).add(foco); camara.lookAt(foco); camara.updateProjectionMatrix();
+    const t = ms / 1000;
+    sucursales.forEach((su) => {
+      const e = su.salto ? t - su.salto : 9;
+      su.g.scale.y = 1 + (e < 0.6 ? Math.sin(e * 16) * Math.exp(-e * 6) * 0.12 : 0);
+    });
+    if (marca) {
+      vrx += ((-my * 6 - rx) * 60 - vrx * 12) * dt; rx += vrx * dt;
+      vry += ((mx * 10 - ry) * 60 - vry * 12) * dt; ry += vry * dt;
+      marca.style.setProperty("--rx", rx.toFixed(2) + "deg"); marca.style.setProperty("--ry", ry.toFixed(2) + "deg");
+    }
+    renderer.render(scene, camara);
+    const w = escena.clientWidth, h = escena.clientHeight;
+    const poner = (el, x, y, z) => {
+      v.set(x, y, z).project(camara);
+      const medio = el.offsetWidth / 2 + 8; // la tarjeta nunca se sale de la escena
+      el.style.left = Math.min(w - medio, Math.max(medio, ((v.x + 1) / 2) * w)) + "px";
+      el.style.top = Math.max(el.offsetHeight + 8, ((1 - v.y) / 2) * h) + "px";
+    };
+    inst.forEach((d, i) => {
+      const su = sucursales[i];
+      poner(pines[i], su.g.position.x - 0.1, Math.max(su.alto + 0.6, 0.3 + d.ahora.capas * PH + 0.5), su.g.position.z - 0.3 * su.frente);
+    });
+    poner(pinCasa, casa.position.x, 2.1, casa.position.z);
+  });
+}
+
+function clp(n) { return "$" + Math.round(n).toLocaleString("es-CL"); }
+function corto(n) {
+  return n >= 1e6 ? "$" + (n / 1e6).toFixed(1).replace(".", ",") + " M"
+    : "$" + Math.round(n / 1e3).toLocaleString("es-CL") + " mil";
+}
+</script>
