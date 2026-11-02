@@ -1,5 +1,6 @@
 from urllib.parse import urlencode
 
+from django.http import JsonResponse
 from django.shortcuts import render
 
 from .forms import AjusteProyeccionForm, QuizForm, SimuladorForm
@@ -34,6 +35,10 @@ def simulador(request):
         filas = comparar(d["inicial"], d["aporte"], d["meses"], d["inflacion"])
         nada = sin_invertir(d["inicial"], d["aporte"], d["meses"], d["inflacion"])
         escena = barrio(filas, d)
+    if request.GET.get("formato") == "json":
+        if form.is_valid():
+            return JsonResponse({"escena": escena, "meses": d["meses"]})
+        return JsonResponse({"errores": {campo: [str(e) for e in errs] for campo, errs in form.errors.items()}}, status=400)
     return render(request, "comparador/simulador.html", {
         "form": form, "filas": filas, "d": d, "nada": nada, "escena": escena,
         "destacar": request.GET.getlist("destacar")})

@@ -143,6 +143,23 @@ class Simulador(SimpleTestCase):
             self.assertEqual(inst["puntos"][-1][2], round(f["real"]))
         self.assertContains(r, 'id="datos-mapa"')
 
+    def test_formato_json_entrega_la_escena(self):
+        r = self.client.get("/", {"inicial": 1_000_000, "aporte": 100_000, "plazo": 5, "unidad": "anios", "inflacion": 3,
+                                  "formato": "json"})
+        self.assertEqual(r.status_code, 200)
+        datos = r.json()
+        self.assertEqual(len(datos["escena"]["inst"]), 7)
+        self.assertEqual(datos["meses"], 60)
+        filas = {f["nombre"]: f for f in comparar(1_000_000, 100_000, 60, 3)}
+        for inst in datos["escena"]["inst"]:
+            self.assertEqual(inst["puntos"][-1][1], round(filas[inst["nombre"]]["final"]))
+
+    def test_formato_json_con_errores_responde_400(self):
+        r = self.client.get("/", {"inicial": 0, "aporte": 0, "plazo": 5, "unidad": "anios", "inflacion": 3,
+                                  "formato": "json"})
+        self.assertEqual(r.status_code, 400)
+        self.assertIn("errores", r.json())
+
 
 class Quiz(SimpleTestCase):
     RESP = {"monto": 3000000, "ingresos": "bajos", "plazo": "1_3a", "caida": "vender", "colchon": "no"}
