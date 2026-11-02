@@ -174,7 +174,7 @@ class CalculoDeProyeccion(SimpleTestCase):
         from .instruments import TPM, anual_desde_mensual, anual_desde_nominal
         cat = {i["id"]: i for i in INSTRUMENTOS}
         self.assertAlmostEqual(cat["cuenta_vista_mas"]["tasa"], anual_desde_nominal(TPM + 0.5))
-        self.assertAlmostEqual(cat["dap_ripley_30"]["tasa"], anual_desde_mensual(0.42))
+        self.assertAlmostEqual(cat["dap_ripley_30"]["tasa"], anual_desde_mensual(0.41))
         self.assertEqual(cat["cuenta_vista_mas"]["tasa_origen"], "contratada")
         self.assertEqual(cat["dap_ripley_30"]["tasa_origen"], "contratada")
 

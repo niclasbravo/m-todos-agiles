@@ -103,6 +103,8 @@ def proyectar(inst, perfil):
 def _razones(inst, perfil, sim, efectiva, calce):
     r = [f"Rentabilidad referencial de {pct_txt(efectiva)}% anual ({ORIGEN_TXT[inst['tasa_origen']]}): "
          f"con {clp(perfil['monto'])} en {meses_txt(perfil['meses_ref'])} llegarías a unos {clp(sim['final'])}."]
+    if inst["tasa_origen"] == "promedio_3a" and inst["riesgo"] >= 3:
+        r[0] += " La rentabilidad pasada no garantiza la futura."
     riesgo = RIESGO_TXT[inst["riesgo"]]
     plazo = perfil["plazo_txt"].lower()
     if calce >= 100:

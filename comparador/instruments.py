@@ -47,49 +47,50 @@ INSTRUMENTOS = [
      "liquidez": "inmediata",
      "nota": "Paga TPM + 0,5% anual, con intereses mensuales. Requiere ser mayor de 18 años y tener presencia crediticia; "
              "puede tener costo de mantención (UF 0,075 + IVA).",
-     "fuente": "chocale.cl, marzo de 2025 (verificar condiciones actuales con el banco)"},
+     "fuente": "Rankia, «Mejores cuentas de ahorro» (actualizada el 28-09-2026): TPM + 0,5% y costo de mantención. Confirmar en el banco"},
     {"id": "dap_ripley_30", "nombre": "DAP 30 días (Banco Ripley)",
      "riesgo": 1, "monto_min": 10_000, "plazo_min_meses": 1, "rescate_dias": 30,
      "penaliza_retiro": False, "garantia_estatal": True, "exige_fondo_emergencia": False,
      "deposito_nuevo_por_aporte": True,
-     "tasa": anual_desde_mensual(0.42), "tasa_origen": "contratada",
+     "tasa": anual_desde_mensual(0.41), "tasa_origen": "contratada",
      "liquidez": "al vencimiento (30 días)",
-     "nota": "Tasa de 0,42% mensual, fija durante los 30 días. Se supone que se renueva a la misma tasa. "
+     "nota": "Tasa de 0,41% mensual, fija durante los 30 días. Se supone que se renueva a la misma tasa. "
              "A un depósito ya abierto no se le puede sumar dinero: con aportes mensuales, cada aporte sería un depósito nuevo.",
-     "fuente": "Dato del equipo (Jira). Rankia (feb-2026) informa monto mínimo $10.000 y garantía estatal"},
+     "fuente": "tasas.cl (0,41% a 30 días, sin fecha visible; Chocale informó 0,40% el 22-09-2026). Monto mínimo de $10.000 según Rankia (feb-2026); tasas.cl muestra $50.000 sin precisar el plazo"},
     {"id": "vision_money_market", "nombre": "Visión Money Market (Principal AGF)",
      "riesgo": 2, "monto_min": 5_000, "plazo_min_meses": 1, "rescate_dias": 1,
      "penaliza_retiro": False, "garantia_estatal": False, "exige_fondo_emergencia": False,
-     "rent_36m_acum": 14.96, "tasa": promedio_anual(14.96), "tasa_origen": "promedio_3a",
+     "rent_36m_acum": 14.23, "rent_12m": 3.40, "tasa": promedio_anual(14.23), "tasa_origen": "promedio_3a",
      "liquidez": "1 día (máximo 10 días corridos)",
-     "nota": "Deuda bancaria de corto plazo, riesgo bajo. Tasa: promedio anual de 3 años (14,96% acumulado a 36 meses, serie Inversionista, ficha al 31-08-2026). "
-             "La fila de la serie se infirió porque la tabla no está etiquetada.",
-     "fuente": "Ficha Principal AGF (31-08-2026); monto mínimo serie Global según Rankia"},
+     "nota": "Deuda bancaria de corto plazo, riesgo bajo. Tasa: promedio anual de 3 años (14,23% acumulado a 36 meses; 3,40% en los últimos 12 meses), datos al 23-09-2026.",
+     "fuente": "Rankia, «Fondos mutuos Banco Falabella» (datos al 23-09-2026). No verificado contra Principal AGF ni la CMF"},
     {"id": "progresion_deuda_lp", "nombre": "Progresión Deuda Largo Plazo (Principal AGF)",
      "riesgo": 3, "monto_min": 5_000, "plazo_min_meses": 6, "rescate_dias": 10,
      "penaliza_retiro": False, "garantia_estatal": False, "exige_fondo_emergencia": False,
-     "rent_36m_acum": 23.97, "tasa": promedio_anual(23.97), "tasa_origen": "promedio_3a",
+     "rent_36m_acum": 23.55, "rent_12m": 4.68, "tasa": promedio_anual(23.55), "tasa_origen": "promedio_3a",
      "liquidez": "hasta 10 días corridos",
      "nota": "Renta fija de más plazo, riesgo medio. Su valor puede bajar si suben las tasas. Horizonte de 6 a 12 meses o más. "
-             "Tasa: promedio anual de 3 años (23,97% acumulado a 36 meses, ficha al 31-08-2026).",
-     "fuente": "Ficha Principal AGF (31-08-2026); monto mínimo serie Global según Rankia"},
+             "Tasa: promedio anual de 3 años (23,55% acumulado a 36 meses; 4,68% en los últimos 12 meses), datos al 23-09-2026.",
+     "fuente": "Rankia, «Fondos mutuos Banco Falabella» (datos al 23-09-2026). No verificado contra Principal AGF ni la CMF"},
     {"id": "cartera_equilibrada", "nombre": "Cartera Equilibrada (Principal AGF)",
      "riesgo": 4, "monto_min": 5_000, "plazo_min_meses": 36, "rescate_dias": 10,
      "penaliza_retiro": False, "garantia_estatal": False, "exige_fondo_emergencia": False,
-     "tasa": 7.0, "tasa_origen": "supuesto",
+     "rent_36m_acum": 37.79, "rent_12m": 10.79, "tasa": promedio_anual(37.79), "tasa_origen": "promedio_3a",
      "liquidez": "hasta 10 días corridos",
      "nota": "Mezcla deuda y acciones, riesgo medio-alto. Pasará a llamarse Gestión Activa Moderado. "
-             "El plazo mínimo de 3 años y la tasa son supuestos del equipo.",
-     "fuente": "Rankia (monto mínimo y rescate) y carta de Principal sobre el reglamento; sin ficha de rentabilidad verificada"},
+             "Tasa: promedio anual de 3 años (37,79% acumulado a 36 meses; 10,79% en los últimos 12 meses), datos al 23-09-2026. "
+             "Rentabilidad pasada no garantiza la futura: estos años pueden haber sido mejores que los próximos. "
+             "El plazo mínimo de 3 años es un supuesto del equipo.",
+     "fuente": "Rankia, «Fondos mutuos Banco Falabella» (datos al 23-09-2026). No verificado contra Principal AGF ni la CMF"},
     {"id": "capitales_acciones_chilenas", "nombre": "Capitales Acciones Chilenas (Principal AGF)",
      "riesgo": 5, "monto_min": 5_000, "plazo_min_meses": 24, "rescate_dias": 10,
      "penaliza_retiro": False, "garantia_estatal": False, "exige_fondo_emergencia": False,
-     # Sin dato confiable a 3 años: dos lecturas de la misma ficha dieron 12 meses de 3,47%-5,65% y de 24,11%.
-     "tasa": 9.0, "tasa_origen": "supuesto",
+     "rent_36m_acum": 59.83, "rent_12m": 19.72, "tasa": promedio_anual(59.83), "tasa_origen": "promedio_3a",
      "liquidez": "hasta 10 días corridos",
      "nota": "Al menos 90% en acciones chilenas, riesgo alto. La ficha recomienda un horizonte mínimo de 2 años. "
-             "La tasa es un supuesto de largo plazo: un año puede ser muy distinto.",
-     "fuente": "Ficha Principal AGF (31-08-2026) para riesgo y horizonte; la tasa es supuesto del equipo"},
+             "Tasa: promedio anual de 3 años (59,83% acumulado a 36 meses; 19,72% en los últimos 12 meses), datos al 23-09-2026. "
+             "Rentabilidad pasada no garantiza la futura: en renta variable un año puede ser muy distinto, incluso negativo.",
+     "fuente": "Rankia, «Fondos mutuos Banco Falabella» (datos al 23-09-2026); riesgo y horizonte de la ficha Principal AGF (31-08-2026). No verificado contra la CMF"},
     {"id": "apv_a", "nombre": "APV régimen A",
      "riesgo": 4, "monto_min": 5_000, "plazo_min_meses": 60, "rescate_dias": 10,
      "penaliza_retiro": True, "garantia_estatal": False, "exige_fondo_emergencia": True, "apv": True,
@@ -97,7 +98,7 @@ INSTRUMENTOS = [
      "liquidez": "puedes retirar, pero pierdes el bono (se restituye)",
      "nota": "El Estado bonifica 15% de lo que aportes, con tope de 6 UTM por año. Se supone invertido en un fondo "
              "balanceado. Es ahorro para la pensión: retirar antes devuelve el bono. Monto mínimo y plazo de 5 años son supuestos.",
-     "fuente": "Guía de APV de Monedario (bono 15%, tope 6 UTM); UTM de noviembre 2026 en calcular.cl"},
+     "fuente": "Superintendencia de Pensiones y Rankia (bono 15%, tope 6 UTM); UTM de noviembre 2026 en calcular.cl. La rentabilidad (7%) no tiene fuente: es supuesto del equipo"},
 ]
 
 
