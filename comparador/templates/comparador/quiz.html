@@ -184,7 +184,7 @@ function iniciar() {
     lienzo.hidden = true; form.addEventListener("change", () => rotular(estado())); form.addEventListener("input", () => rotular(estado())); return;
   }
   const quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
   renderer.setClearColor(0x000000, 0);
   renderer.toneMapping = THREE.NeutralToneMapping;
   renderer.shadowMap.enabled = true;
@@ -207,7 +207,7 @@ function iniciar() {
   function olas(t) { // olitas suaves alrededor de la mini isla
     const a = geoAgua.attributes.position.array;
     for (let k = 0; k < a.length; k += 3) a[k + 1] = Math.sin(aguaBase[k] * 1.6 + t * 1.6) * 0.035 + Math.cos(aguaBase[k + 2] * 1.9 + t * 1.2) * 0.03;
-    geoAgua.attributes.position.needsUpdate = true; geoAgua.computeVertexNormals();
+    geoAgua.attributes.position.needsUpdate = true; // agua facetada: la GPU calcula las normales
   }
   const isla = pieza(5.4, 0.36, 3.4, mat(0xf4f6f8), 0.18); isla.position.y = -0.18; scene.add(isla);
   const calle = pieza(5, 0.04, 0.42, mat(0xc9d0d9), 0.02); calle.position.y = 0.02; scene.add(calle);
@@ -251,11 +251,13 @@ function iniciar() {
   }
   form.addEventListener("change", actualizar); form.addEventListener("input", actualizar); actualizar();
 
-  let antes = performance.now(), mx = 0, giro = 0;
+  let antes = performance.now(), mx = 0, giro = 0, enPantalla = true;
+  new IntersectionObserver((e) => { enPantalla = e[0].isIntersecting; }).observe(lienzo);
   resumen.addEventListener("pointermove", (ev) => { const r = resumen.getBoundingClientRect(); mx = ((ev.clientX - r.left) / r.width - 0.5) * 2; });
   resumen.addEventListener("pointerleave", () => { mx = 0; });
   renderer.setAnimationLoop(() => {
     const ahora = performance.now(), dt = Math.min(0.05, (ahora - antes) / 1000), t = ahora / 1000; antes = ahora;
+    if (!enPantalla || document.hidden) return;
     edificios.forEach((ed) => {
       if (quieto) ed.escala = ed.objetivo;
       else { ed.vel += ((ed.objetivo - ed.escala) * 160 - ed.vel * 14) * dt; ed.escala += ed.vel * dt; } // resorte con rebote
