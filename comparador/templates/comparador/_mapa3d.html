@@ -533,7 +533,7 @@ function iniciar() {
     const w = escena.clientWidth, h = escena.clientHeight;
     const poner = (el, x, y, z) => {
       v.set(x, y, z).project(camara);
-      const medio = el.offsetWidth / 2 + 8; // la tarjeta nunca se sale de la escena
+      const medio = el.offsetWidth / 2 + 20; // la tarjeta nunca se sale de la escena
       el.style.left = Math.min(w - medio, Math.max(medio, ((v.x + 1) / 2) * w)) + "px";
       el.style.top = Math.max(el.offsetHeight + 8, ((1 - v.y) / 2) * h) + "px";
     };
