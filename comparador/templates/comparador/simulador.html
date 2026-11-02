@@ -4,7 +4,7 @@
   <p class="lead">Compara cuánto tendrías con cada opción disponible en Chile. Ingresa cuánto tienes, cuánto puedes aportar al mes y por cuánto tiempo.</p>
   <p class="lead">¿No sabes por dónde partir? <a href="{% url 'quiz' %}">Responde el quiz</a> y te mostramos hasta 3 opciones para empezar.</p>
   <p class="lead" id="perfil-guardado" hidden></p>
-  {% if filas %}{% include "comparador/_monedas3d.html" %}{% endif %}
+  {% if filas %}{% include "comparador/_barrio3d.html" %}{% endif %}
   <div class="grid">
     <form method="get">
       {{ form.non_field_errors }}
@@ -29,7 +29,7 @@
         <span><i class="sw" style="background:var(--real)"></i>Valor real, en pesos de hoy</span>
       </p>
       {% for f in filas %}
-      <article class="fila{% if f.nombre in destacar %} destacada{% endif %}" data-nombre="{{ f.nombre }}" data-final="{{ f.final|floatformat:0 }}" data-aportado="{{ f.aportado|floatformat:0 }}" data-real="{{ f.real|floatformat:0 }}" data-final-fmt="{{ f.final_fmt }}" data-ganancia-fmt="{{ f.ganancia_fmt }}" data-real-fmt="{{ f.real_fmt }}" data-riesgo="{{ f.riesgo_txt }}">
+      <article class="fila{% if f.nombre in destacar %} destacada{% endif %}">
         <header><h3>{{ f.nombre }}</h3><span class="tag">{% if f.nombre in destacar %}Recomendada para ti. {% endif %}Riesgo {{ f.riesgo_txt }}</span></header>
         <div class="barra" role="img" aria-label="{{ f.nombre }}: {{ f.final_fmt }}, valor real {{ f.real_fmt }}">
           <span class="a" style="width:{{ f.pct_aportado }}%"></span><span class="g" style="width:{{ f.pct_ganancia }}%"></span><i style="left:{{ f.pct_real }}%"></i>
