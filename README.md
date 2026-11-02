@@ -38,6 +38,75 @@ source venv/bin/activate
 
     Correr en un navegador ' http://127.0.0.1:8000 '
 
+## Desplegar en PythonAnywhere
+
+Pasos para el plan gratuito. Reemplaza `<usuario>` por tu usuario de PythonAnywhere.
+
+1. Abre una consola Bash y clona el repositorio:
+
+   ```bash
+   git clone https://github.com/niclasbravo/m-todos-agiles.git
+   cd m-todos-agiles
+   ```
+
+2. Crea el entorno e instala las dependencias:
+
+   ```bash
+   mkvirtualenv --python=/usr/bin/python3.10 ahorro-venv
+   pip install -r requirements.txt
+   ```
+
+3. En la pestaña Web, selecciona **Add a new web app → Manual configuration → Python 3.10**. Configura **Source code** como `/home/<usuario>/m-todos-agiles` y **Virtualenv** como `/home/<usuario>/.virtualenvs/ahorro-venv`.
+
+4. Genera una clave secreta en la consola:
+
+   ```bash
+   python -c "import secrets; print(secrets.token_urlsafe(50))"
+   ```
+
+   Edita el archivo WSGI `/var/www/<usuario>_pythonanywhere_com_wsgi.py` desde la pestaña Web y reemplaza su contenido por lo siguiente, sustituyendo también `<clave-generada>` por el valor obtenido:
+
+   ```python
+   import os
+   import sys
+
+   ruta_proyecto = "/home/<usuario>/m-todos-agiles"
+   if ruta_proyecto not in sys.path:
+       sys.path.insert(0, ruta_proyecto)
+
+   os.environ["DJANGO_SETTINGS_MODULE"] = "config.settings"
+   os.environ["DJANGO_SECRET_KEY"] = "<clave-generada>"
+   os.environ["DJANGO_DEBUG"] = "False"
+   os.environ["DJANGO_ALLOWED_HOSTS"] = "<usuario>.pythonanywhere.com"
+
+   from django.core.wsgi import get_wsgi_application
+
+   application = get_wsgi_application()
+   ```
+
+   En el plan gratuito, las variables de entorno de la aplicación se definen en este archivo WSGI.
+
+5. En la consola Bash, activa el entorno y recopila los archivos estáticos desde el proyecto:
+
+   ```bash
+   workon ahorro-venv
+   cd /home/<usuario>/m-todos-agiles
+   python manage.py collectstatic --noinput
+   ```
+
+6. En **Web → Static files**, configura la URL `/static/` con el directorio `/home/<usuario>/m-todos-agiles/staticfiles`.
+
+7. Pulsa **Reload** y abre `https://<usuario>.pythonanywhere.com`.
+
+8. Para actualizar después, ejecuta lo siguiente y pulsa **Reload** en la pestaña Web:
+
+   ```bash
+   workon ahorro-venv
+   cd /home/<usuario>/m-todos-agiles
+   git pull
+   python manage.py collectstatic --noinput
+   ```
+
 ## Funcionalidades
  
 | Funcionalidad | Dónde |
