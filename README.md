@@ -186,3 +186,23 @@ Ideas para próximos sprints, ordenadas de mayor a menor cercanía al MVP:
 4. Guías breves: qué es un DAP, un fondo mutuo, el APV, y la diferencia entre ahorro e inversión.
 5. Presupuesto y gastos hormiga: registro simple de gastos y suscripciones, y cuánto significarían ahorrados durante un año.
 6. Costo de vida estudiantil: presupuesto mensual (arriendo, transporte, alimentación) y cuánto se puede ahorrar al mes.
+
+## Fuentes
+
+Los datos de tasas vienen de sitios comparadores y de fuentes públicas, no directamente de los bancos ni de la CMF.
+Confirmarlos en los sitios oficiales queda para el Sprint 2. Última revisión: 2 de noviembre de 2026.
+
+| Dato | Fuente | Fecha del dato |
+|---|---|---|
+| Cuenta Vista Más (TPM + 0,5%, costo de mantención) | [Rankia: mejores cuentas de ahorro](https://www.rankia.cl/blog/mejores-cuentas-bancarias/3240939-cuales-son-mejores-cuentas-ahorro?page=2) | Actualizada el 28-09-2026 |
+| Cuenta Vista Más (condiciones y requisitos) | [Chocale: Cuenta Vista Más de Banco Consorcio](https://chocale.cl/2025/03/cuenta-vista-mas-de-banco-consorcio-caracteristicas-de-la-cuenta-que-paga-intereses/) | 26-03-2025 |
+| DAP 30 días de Banco Ripley (0,41% mensual) | [tasas.cl: depósitos a plazo](https://tasas.cl/deposits) | Sin fecha visible |
+| DAP 30 días (contraste: 0,40%) | [Chocale: ranking de depósitos a plazo](https://chocale.cl/2026/09/depositos-a-plazo-dap-mejor-tasa-septiembre/) | 22-09-2026 |
+| Fondos Principal AGF (rentabilidad a 12 y 36 meses, monto mínimo, rescate) | [Rankia: fondos mutuos Banco Falabella](https://www.rankia.cl/blog/fondos-mutuos-agf/2029546-fondos-mutuos-banco-falabella?page=1) | 23-09-2026 |
+| Fondos Principal AGF (riesgo y horizonte recomendado) | Fichas de Principal AGF | 31-08-2026 |
+| APV régimen A (bono de 15%, tope de 6 UTM) | [Rankia: APV, consejos, beneficios y regímenes](https://www.rankia.cl/blog/fondos-pensiones-afp/3235492-apv-consejos-beneficios-regimenes) | Actualizada el 13-07-2026 |
+| APV (bono de 15%, tope de 6 UTM, devolución al retirar antes de pensionarse) | [Superintendencia de Pensiones](https://www.spensiones.cl/portal/institucional/594/w3-article-5795.html) | Consultada el 02-11-2026 |
+| UTM de noviembre 2026 ($72.440) | [calcular.cl: valor de la UTM en 2026](https://www.calcular.cl/valor-utm-2026) | Noviembre de 2026 |
+| TPM de 4,5% e IPC de 4,1% | [Rankia: TPM de octubre de 2026](https://www.rankia.cl/noticias/bolsa/7528705-tpm-octubre-2026-banco-central-chile-mantiene-tasa-4-5) | Reunión del 27-10-2026; IPC de septiembre |
+
+**Datos que son supuestos del equipo** (no tienen fuente): la rentabilidad del APV (7% anual), los plazos mínimos de Cartera Equilibrada (3 años), Capitales Acciones Chilenas (2 años) y APV (5 años), y el monto mínimo del APV.
