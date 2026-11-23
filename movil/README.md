@@ -27,8 +27,8 @@ abre la URL «Network» y se ve a pantalla completa. Chrome ofrece «Instalar ap
 
 **2. Un solo archivo para compartir:** `npm run demo` genera `dist-demo/index.html`, autocontenido (≈1,1 MB). Se abre con doble clic.
 
-**3. APK de Android sin instalar nada:** copia `movil/ci/apk-movil.yml` a `.github/workflows/apk-movil.yml` (en la raíz del
-repo) y súbelo a GitHub. El workflow corre las pruebas y compila el APK. Se descarga en *Actions → la última ejecución → Artifacts → donde-ahorro-apk*.
+**3. APK de Android sin instalar nada:** cada vez que se sube un cambio a `movil/` o `comparador/`, el workflow
+`.github/workflows/apk-movil.yml` corre las pruebas y compila el APK. También se puede lanzar a mano desde Actions → «App móvil (APK)» → Run workflow. Se descarga en *Actions → la última ejecución → Artifacts → donde-ahorro-apk*.
 En el teléfono: abrir el `.apk` y permitir «instalar apps desconocidas».
 
 **4. Con Android Studio** (emulador o teléfono por USB):
@@ -84,7 +84,6 @@ movil/
   tests/            logica.test.ts, paridad.test.ts
   scripts/          generar_paridad.py
   android/          proyecto nativo de Capacitor (íconos y splash propios)
-  ci/               workflow de GitHub Actions que compila el APK (va en .github/workflows/)
   demo/             donde-ahorro.html (la app en un solo archivo) y demo-app-movil.mp4 (recorrido grabado)
 ```
 
