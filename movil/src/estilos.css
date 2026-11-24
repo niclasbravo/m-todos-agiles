@@ -1,0 +1,352 @@
+/* ¿Dónde ahorro? — app móvil. Mismos tokens, tipografías y componentes que la web (base.html),
+   reacomodados para una pantalla de teléfono: barra superior, pestañas abajo y hoja inferior. */
+
+:root{--ground:#f2f4f7;--surface:#ffffff;--raised:#eef0f3;--border:#e4e7ec;--rule:#eef0f3;--control:#8c8f94;--text:#0a0a0a;--muted:#5f6368;--primary:#141414;--hue:#9a6c00;--data-ink:#141414;--data-grey:#9aa0a6;--positive:#247b50;--negative:#c4242a;--warning-ink:#92400e;--warning-bg:#fffbeb;--warning-border:#fde68a;--real:#c4242a;--serie-pones:#3b6aa8;--serie-gana:#b37a00;--efectivo:#0f766e;--button-label:#fff;--cielo:#c4e0ee;--oro:#d99a00;--oro-claro:#f2b937;--sombra:0 10px 30px rgba(15,23,42,.10);--ease-out:cubic-bezier(.23,1,.32,1);
+  --safe-top:var(--safe-area-inset-top,env(safe-area-inset-top,0px));--safe-bottom:var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px));--tabbar:64px;color-scheme:light}
+:root[data-theme=dark]{--ground:#0b0b0c;--surface:#151517;--raised:#1f1f22;--border:#2a2a2e;--rule:#232326;--control:#6e6e74;--text:#f5f5f5;--muted:#b4b4b4;--primary:#f5f5f5;--hue:#e0b347;--data-ink:#e6e6e6;--data-grey:#6e6e74;--positive:#3fc07a;--negative:#ff7b71;--warning-ink:#e3a94a;--warning-bg:#1f1a10;--warning-border:#4a3a17;--real:#ff7b71;--serie-pones:#5f8fd6;--serie-gana:#bd8a22;--efectivo:#4fb8ac;--button-label:#0b0b0c;--cielo:#9fc6da;--sombra:0 10px 30px rgba(0,0,0,.35);color-scheme:dark}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body,#app{height:100%;margin:0}
+body{background:var(--ground);color:var(--text);font:15px/1.55 "Geist",system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden;overscroll-behavior:none;transition:background-color 250ms ease,color 250ms ease;-webkit-font-smoothing:antialiased}
+input,select,button,textarea{font:inherit}
+a{color:var(--text);text-decoration:underline;text-underline-offset:3px}
+h1{font-size:24px;line-height:1.2;font-weight:700;letter-spacing:-.02em;margin:0 0 8px}
+h2{font-size:18px;line-height:1.35;font-weight:600;margin:0 0 8px}
+h3{font-size:16px;font-weight:600;margin:0}
+.lead{color:var(--muted);margin:0 0 20px}
+.nums,.tabla,.tag,svg text,input,select,output{font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid var(--hue);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+
+/* ---------- Armazón de la app ---------- */
+.app{position:fixed;inset:0;display:flex;flex-direction:column}
+.barra-sup{flex:none;position:relative;z-index:30;height:calc(56px + var(--safe-top));padding:var(--safe-top) 16px 0;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:color-mix(in srgb,var(--ground) 82%,transparent);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid var(--border)}
+.wordmark{font-weight:700;white-space:nowrap;font-size:16px;display:flex;align-items:center;gap:8px}
+.wordmark .moneda{width:22px;height:22px;border-radius:50%;background:var(--oro-claro);box-shadow:inset 0 -2px 0 rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.5);display:grid;place-items:center;font:800 13px/1 "Bricolage Grotesque",Geist,sans-serif;color:#2b2118}
+.tema{width:40px;height:40px;padding:0;display:inline-grid;place-items:center;background:transparent;color:var(--text);border:1px solid var(--border);border-radius:99px;cursor:pointer}
+.tema span{grid-area:1/1;transition:opacity 200ms ease,transform 300ms var(--ease-out)}
+.tema .luna{width:15px;height:15px;border-radius:50%;box-shadow:inset -5px -3px 0 0 currentColor}
+.tema .sol{width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:0 -7px 0 -2.5px currentColor,0 7px 0 -2.5px currentColor,7px 0 0 -2.5px currentColor,-7px 0 0 -2.5px currentColor,5px 5px 0 -2.5px currentColor,-5px -5px 0 -2.5px currentColor,5px -5px 0 -2.5px currentColor,-5px 5px 0 -2.5px currentColor;opacity:0;transform:rotate(-90deg) scale(.6)}
+:root[data-theme=dark] .tema .luna{opacity:0;transform:rotate(90deg) scale(.6)}
+:root[data-theme=dark] .tema .sol{opacity:1;transform:none}
+
+.pantallas{position:relative;flex:1;min-height:0;overflow:hidden}
+.pantalla{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;
+  padding:20px 16px calc(var(--tabbar) + var(--safe-bottom) + 28px);transition:transform 320ms var(--ease-out),opacity 220ms ease;will-change:transform}
+.pantalla[data-lado=izq]{transform:translateX(-104%);visibility:hidden;transition:transform 320ms var(--ease-out),visibility 0s 320ms}
+.pantalla[data-lado=der]{transform:translateX(104%);visibility:hidden;transition:transform 320ms var(--ease-out),visibility 0s 320ms}
+.pantalla.sin-margen-sup{padding-top:0}
+
+.tabbar{position:absolute;z-index:40;left:0;right:0;bottom:0;height:calc(var(--tabbar) + var(--safe-bottom));padding-bottom:var(--safe-bottom);display:grid;grid-template-columns:repeat(3,1fr);
+  background:var(--surface);border-top:1px solid var(--border);box-shadow:0 -6px 20px rgba(15,23,42,.05)}
+.tabbar button{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:0;color:var(--muted);font-size:11.5px;font-weight:600;cursor:pointer;min-height:44px}
+.tabbar button svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;transition:transform 200ms var(--ease-out)}
+.tabbar button.on{color:var(--text)}
+.tabbar button.on svg{transform:translateY(-1px) scale(1.06)}
+.tabbar button.on::before{content:"";position:absolute;top:0;left:30%;right:30%;height:3px;border-radius:0 0 3px 3px;background:var(--oro)}
+.tabbar .punto{position:absolute;top:10px;left:calc(50% + 9px);width:8px;height:8px;border-radius:50%;background:var(--oro);box-shadow:0 0 0 2px var(--surface)}
+
+/* ---------- Botones y controles ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:12px 18px;border:1px solid var(--primary);border-radius:8px;background:var(--primary);color:var(--button-label);font-weight:600;text-decoration:none;cursor:pointer;max-width:100%;
+  transition:transform 160ms var(--ease-out),background-color 160ms ease,border-color 160ms ease}
+.btn:active{transform:scale(.97)}
+.btn.sec{background:transparent;border:1px solid var(--control);color:var(--text)}
+.btn.ancho{width:100%}
+.btn.chico{min-height:40px;padding:8px 14px;font-size:14px}
+.link{background:none;border:0;padding:6px 0;color:var(--text);font-weight:600;text-decoration:underline;text-underline-offset:3px;cursor:pointer;min-height:40px}
+label{display:block;font-size:13px;font-weight:500;color:var(--muted);margin-bottom:4px}
+input[type=number],input[type=text],input:not([type]),select{width:100%;min-width:0;height:48px;padding:10px 12px;border:1px solid var(--control);border-radius:8px;background:var(--surface);color:var(--text);font-size:16px}
+input[type=range]{width:100%;height:30px;margin:0;accent-color:var(--oro);background:transparent}
+.campo{margin:0 0 14px}
+.fila2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.errorlist{list-style:none;margin:6px 0 10px;padding:0;color:var(--negative);font-size:13px}
+.tarjeta{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px}
+.leyenda{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted);margin:0 0 14px}
+.sw{display:inline-block;width:12px;height:12px;margin-right:6px;border-radius:2px;vertical-align:-1px}
+.sw.tick{width:3px;border-radius:1px}
+.meta{margin:6px 0 0;color:var(--muted);font-size:13px}
+details{color:var(--muted);font-size:13px}
+summary{cursor:pointer;min-height:40px;display:flex;align-items:center}
+.desplegable summary{color:var(--text);font-weight:600;list-style:none;display:inline-flex;gap:8px}
+.desplegable summary::-webkit-details-marker{display:none}
+.desplegable summary::after{content:"";width:7px;height:7px;border:solid currentColor;border-width:0 1.5px 1.5px 0;transform:translateY(-2px) rotate(45deg);transition:transform 200ms var(--ease-out)}
+.desplegable[open] summary::after{transform:translateY(1px) rotate(-135deg)}
+.aviso{background:var(--warning-bg);color:var(--warning-ink);border:1px solid var(--warning-border);border-radius:10px;padding:12px 14px;margin:12px 0;font-size:13px}
+.aviso.ok{background:var(--surface);color:var(--muted);border-color:var(--border)}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:26px;padding:3px 10px;border-radius:99px;background:var(--raised);color:var(--text);font-size:12px;font-weight:500;line-height:1.3}
+.chip.negativo{background:color-mix(in srgb,var(--negative) 14%,var(--surface));color:var(--negative);font-weight:700}
+.seccion{margin:28px 0 0}
+.titulo-seccion{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+
+/* ---------- Simulador: portada y mapa ---------- */
+.portada{margin:0 0 16px}
+.marca3d{margin:4px 0 10px;font:800 54px/.92 "Bricolage Grotesque",Geist,system-ui,sans-serif;letter-spacing:-.035em;color:var(--text);
+  text-shadow:1px 1px 0 #e3a92b,2px 2px 0 #d99a00,3px 3px 0 #cf9200,4px 4px 0 #c48a00,5px 5px 0 #b98200,6px 6px 0 #ad7900,7px 8px 18px rgba(0,0,0,.18);
+  transform:perspective(700px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transform-origin:30% 60%;will-change:transform}
+.marca3d .sig{color:var(--oro);text-shadow:1px 1px 0 #b98200,2px 2px 0 #a87300,3px 3px 0 #976800,4px 5px 12px rgba(0,0,0,.18)}
+.portada h1{font-size:20px;margin:0 0 6px}
+.portada .lead{font-size:14px;margin:0}
+
+.mapa{position:relative;margin:0 -16px;background:var(--cielo);border-block:1px solid var(--border);overflow:hidden}
+.mapa .escena{position:relative;height:min(58vh,480px);min-height:340px;touch-action:pan-y;cursor:pointer}
+.mapa .escena canvas{display:block;width:100%;height:100%}
+.mapa .tarjetas{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.mapa-ley{position:absolute;z-index:3;top:10px;left:10px;margin:0;padding:6px 10px;display:flex;gap:4px 12px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:var(--sombra);max-width:calc(100% - 20px)}
+.mapa-ley .sw{width:10px;height:10px;margin-right:5px}
+.ver-todo{position:absolute;z-index:3;top:10px;right:10px;min-height:36px;padding:6px 12px;border-radius:99px;background:var(--surface);color:var(--text);border:1px solid var(--border);font-weight:600;font-size:13px;box-shadow:var(--sombra);animation:aparecer 220ms var(--ease-out)}
+.sin-webgl{padding:28px 20px;text-align:center;color:var(--muted)}
+.tiempo{position:absolute;z-index:3;left:10px;right:10px;bottom:10px;display:flex;align-items:center;gap:12px;padding:8px 12px 8px 8px;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:var(--sombra)}
+.tiempo .play{flex:none;width:44px;height:44px;min-height:0;padding:0;border-radius:10px;font-size:15px}
+.linea{flex:1;min-width:0}
+.linea input[type=range]{height:24px}
+.hitos{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.hitos span.on{color:var(--text);font-weight:600}
+.hitos.muchos span:nth-child(even):not(:last-child){display:none}
+
+.pin{position:absolute;transform:translate(-50%,-100%);background:#fff;color:#0a0a0a;border-radius:8px;padding:3px 8px;font-size:11.5px;font-weight:700;line-height:1.3;white-space:nowrap;box-shadow:0 4px 14px rgba(15,23,42,.14);font-variant-numeric:tabular-nums;transition:transform 220ms var(--ease-out),padding 220ms var(--ease-out),opacity 200ms ease}
+.pin b{display:none;font-size:12.5px}
+.pin .vivo{display:none;color:#5f6368;margin-top:2px;font-weight:400;font-size:11px;white-space:normal;max-width:210px}
+.pin .vivo i{display:inline-block;width:6px;height:6px;border-radius:50%;background:#e5484d;margin-right:4px;vertical-align:1px;animation:latido 1.6s ease-in-out infinite}
+.pin:not(.on):not(.casa):not(.distrito){opacity:.92;font-size:11px;padding:2px 6px}
+.pin.on{transform:translate(-50%,-100%) scale(1.04);z-index:2;outline:2px solid var(--oro-claro);padding:7px 10px;font-weight:400}
+.pin.on b,.pin.on .vivo,.pin.casa b{display:block}
+.pin.on .monto{font-weight:700;font-size:14px}
+.pin.casa{background:#0a0a0a;color:#fff;font-weight:400;font-size:11px}
+.pin.casa.envia{outline:2px solid var(--oro-claro);transform:translate(-50%,-100%) scale(1.08)}
+.pin.distrito{display:block;border:0;border-radius:99px;background:#0a0a0a;color:#fff;font-size:11.5px;font-weight:700;padding:6px 12px;pointer-events:auto;cursor:pointer;min-height:0}
+.pin.distrito.oculto{opacity:0;pointer-events:none}
+.mapa.enfocado .pin:not(.on):not(.casa):not(.distrito){opacity:0}
+
+.zonas{display:flex;gap:6px;margin:12px -16px 0;padding:2px 16px 4px;overflow-x:auto;scrollbar-width:none}
+.zonas::-webkit-scrollbar{display:none}
+.zonas button{flex:none;min-height:42px;display:inline-flex;align-items:center;gap:7px;padding:8px 14px;background:var(--surface);color:var(--muted);border:1px solid var(--border);border-radius:12px;font-size:13.5px;font-weight:600;cursor:pointer;transition:background-color 180ms ease,color 180ms ease,transform 160ms var(--ease-out)}
+.zonas button:active{transform:scale(.96)}
+.zonas button svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.zonas button.on{background:var(--text);color:var(--surface);border-color:var(--text)}
+.zona-card{margin:12px 0 0;animation:subir 280ms var(--ease-out)}
+.zona-card .zc-et{display:block;font-size:12px;font-weight:600;color:#b07c00;margin-bottom:4px}
+:root[data-theme=dark] .zona-card .zc-et{color:var(--hue)}
+.zona-card h2{margin:0 0 8px;font:800 26px/1.1 "Bricolage Grotesque",Geist,system-ui,sans-serif;letter-spacing:-.02em}
+.zona-card p{margin:0 0 10px;font-size:14px;color:var(--muted)}
+.zona-card ul{list-style:none;margin:0;padding:0}
+.zona-card li button{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:46px;padding:8px 10px;margin:0 -10px;width:calc(100% + 20px);background:transparent;color:var(--text);border:0;border-radius:8px;font-weight:500;text-align:left;cursor:pointer}
+.zona-card li button:active{background:var(--raised)}
+.zona-card li button b{font-variant-numeric:tabular-nums}
+
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin:12px 0 0;padding:0;overflow:hidden}
+.kpi{padding:12px 14px;min-width:0}
+.kpi:nth-child(even){border-left:1px solid var(--border)}
+.kpi:nth-child(n+3){border-top:1px solid var(--border)}
+.kpi span{display:block;font-size:12px;color:var(--muted)}
+.kpi strong{display:block;font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.01em}
+.kpi small{display:block;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 0}
+
+/* ---------- Formulario del simulador ---------- */
+.form-sim h2{margin:0 0 14px}
+.form-sim .acciones-form{display:flex;gap:10px}
+
+/* ---------- Hoja inferior ---------- */
+.velo{position:fixed;inset:0;z-index:50;background:rgba(10,10,12,.32);animation:velo 220ms ease both}
+.hoja{position:fixed;z-index:51;left:0;right:0;bottom:0;max-height:88dvh;overflow-y:auto;background:var(--surface);border-radius:20px 20px 0 0;border-top:1px solid var(--border);
+  padding:8px 20px calc(20px + var(--safe-bottom));box-shadow:0 -12px 40px rgba(15,23,42,.18);animation:hoja 320ms var(--ease-out) both}
+.hoja.cerrando{animation:hoja-sale 200ms ease both}
+.velo.cerrando{animation:velo-sale 200ms ease both}
+.asa{width:40px;height:5px;border-radius:99px;background:var(--border);margin:4px auto 12px}
+.hoja-cab{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.hoja-cab h2{margin:0}
+.cerrar{width:38px;height:38px;padding:0;background:transparent;color:var(--text);border:1px solid var(--border);border-radius:99px;font-size:20px;line-height:1;cursor:pointer}
+.hoja .deslizador label{display:flex;justify-content:space-between;margin:14px 0 2px}
+.hoja .deslizador output{color:var(--text);font-weight:700}
+.sim-estado{font-size:12px;color:var(--muted);margin:12px 0 14px;min-height:18px}
+.sim-estado.error{color:var(--negative)}
+@keyframes hoja{from{transform:translateY(100%)}}
+@keyframes hoja-sale{to{transform:translateY(100%)}}
+@keyframes velo{from{opacity:0}}
+@keyframes velo-sale{to{opacity:0}}
+
+/* ---------- Ranking del simulador ---------- */
+.ranking{list-style:none;margin:0 0 12px;padding:0;border-top:1px solid var(--border)}
+.puesto{display:grid;grid-template-columns:24px 28px minmax(0,1fr);gap:4px 10px;padding:16px 4px;border-bottom:1px solid var(--border);animation:entrar 360ms var(--ease-out) both;animation-delay:var(--retraso,0ms)}
+.pos{font:800 22px/1 "Bricolage Grotesque",Geist,system-ui,sans-serif;letter-spacing:-.02em;color:var(--muted);font-variant-numeric:tabular-nums;padding-top:3px}
+.puesto:first-child .pos{color:var(--text)}
+.picto svg{width:26px;height:26px;fill:none;stroke:var(--text);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.linea1{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.linea1 h3{flex:1 1 180px;margin:0;font-size:15px;line-height:1.35}
+.ranking .monto{font-size:22px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.barra{display:flex;position:relative;height:10px;margin:10px 0 8px}
+.barra .a{background:var(--serie-pones);border-radius:4px 0 0 4px;transform-origin:left center;animation:crecer 900ms var(--ease-out) both;animation-delay:calc(var(--retraso,0ms) + 150ms)}
+.barra .g{background:var(--serie-gana);margin-left:2px;border-radius:0 4px 4px 0;transform-origin:left center;animation:crecer 900ms var(--ease-out) both;animation-delay:calc(var(--retraso,0ms) + 250ms)}
+.barra i{position:absolute;top:-4px;bottom:-4px;width:2px;margin-left:-1px;background:var(--real);box-shadow:0 0 0 2px var(--surface);border-radius:2px;animation:aparecer 300ms ease both;animation-delay:calc(var(--retraso,0ms) + 900ms)}
+.datos{margin:0;font-size:13px;color:var(--muted)}
+.pie{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:4px}
+.detalle{margin:0;font-size:13px}
+.detalle summary{min-height:36px;font-size:13px}
+.ver-mapa{min-height:36px;padding:4px 0;font-size:13px;font-weight:600;background:none;color:var(--text);border:0;text-decoration:underline;text-underline-offset:3px;cursor:pointer;white-space:nowrap}
+.puesto.destacada{background:color-mix(in srgb,var(--serie-gana) 8%,var(--surface));border-radius:10px}
+.insignia{flex:none;padding:2px 8px;border-radius:4px;background:var(--text);color:var(--surface);font-size:11px;font-weight:700;white-space:nowrap}
+@keyframes crecer{from{transform:scaleX(0)}}
+@keyframes entrar{from{opacity:0;transform:translateY(10px)}}
+
+/* ---------- ¿Y si no lo pones en ninguna parte? ---------- */
+.nada{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--efectivo);border-radius:14px;padding:16px;margin:0 0 22px}
+.nada h2{margin:0 0 12px}
+.nada p{margin:0 0 8px}
+.estante{position:relative;height:220px;margin:0 0 14px;border-radius:10px;background:color-mix(in srgb,var(--raised) 60%,var(--surface));overflow:hidden}
+.estante canvas{display:block;width:100%;height:100%}
+.estante-reloj{position:absolute;left:12px;top:10px;margin:0;display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;pointer-events:none;max-width:70%}
+.estante-reloj b{font:800 22px/1 "Bricolage Grotesque",Geist,system-ui,sans-serif;color:var(--text);letter-spacing:-.02em}
+.estante-tiempo{position:absolute;left:10px;right:10px;bottom:8px;display:flex;align-items:center;gap:8px}
+.estante-tiempo button{flex:none;width:34px;height:34px;padding:0;border-radius:99px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:12px;cursor:pointer}
+.estante-tiempo input{flex:1}
+.nada-comp{display:grid;grid-template-columns:1fr auto 1fr;align-items:start;gap:10px;margin-bottom:12px}
+.nada-col{display:flex;flex-direction:column;gap:2px;min-width:0}
+.nada-et{font-size:12px;color:var(--muted)}
+.nada-col strong{font-size:21px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.nada-col strong.pierde{color:var(--negative)}
+.nada-flecha{align-self:center;width:16px;height:2px;background:var(--control);position:relative}
+.nada-flecha::after{content:"";position:absolute;right:-1px;top:-4px;width:8px;height:8px;border:solid var(--control);border-width:2px 2px 0 0;transform:rotate(45deg)}
+.billete{position:relative;display:block;margin-top:10px;width:130px;max-width:100%;aspect-ratio:2.1;border-radius:8px;background:color-mix(in srgb,var(--efectivo) 22%,var(--surface));border:1.5px solid color-mix(in srgb,var(--efectivo) 55%,var(--surface))}
+.billete i{position:absolute;inset:0;display:grid;place-items:center;font:800 22px/1 "Bricolage Grotesque",Geist,sans-serif;font-style:normal;color:var(--efectivo)}
+.billete::before{content:"";position:absolute;inset:6px;border:1px dashed color-mix(in srgb,var(--efectivo) 45%,transparent);border-radius:5px}
+.billete.chico{transform:scale(calc(var(--k) / 100));transform-origin:left bottom;opacity:.85;animation:encoger 900ms 300ms var(--ease-out) both}
+.nada.con-3d .billete{display:none}
+@keyframes encoger{from{transform:scale(1);opacity:1}}
+.nada-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0}
+.nada-mas{margin-top:8px}
+.nada-mas p{margin:8px 0 0}
+
+/* ---------- Quiz ---------- */
+.medidor{display:grid;grid-template-columns:140px 1fr;align-items:center;gap:8px;padding:10px 14px;margin:0 0 14px}
+.medidor-3d{height:104px}
+.medidor-3d canvas{display:block;width:100%;height:100%}
+.medidor-perfil{margin:0}
+.medidor-perfil span{display:block;font-size:12px;color:var(--muted)}
+.medidor-perfil strong{display:block;font:800 26px/1.1 "Bricolage Grotesque",Geist,system-ui,sans-serif;letter-spacing:-.02em}
+.medidor-perfil small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.medidor-perfil.cambia strong{animation:latir 360ms var(--ease-out)}
+.quiz{position:relative;padding:20px 18px 18px;border-radius:16px;box-shadow:var(--sombra)}
+.progreso{display:flex;align-items:center;gap:14px;margin:0 0 18px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.progreso .barra-p{flex:1;height:6px;border-radius:99px;background:var(--raised);overflow:hidden}
+.progreso .barra-p i{display:block;height:100%;border-radius:inherit;background:var(--oro);transition:width 320ms var(--ease-out)}
+.paso{animation:paso-entra 300ms var(--ease-out) both}
+.paso.atras{animation-name:paso-entra-atras}
+@keyframes paso-entra{from{opacity:0;transform:translateX(36px)}}
+@keyframes paso-entra-atras{from{opacity:0;transform:translateX(-36px)}}
+.paso legend,.paso .pregunta{font:700 21px/1.18 "Bricolage Grotesque",Geist,system-ui,sans-serif;letter-spacing:-.02em;margin:0 0 16px;padding:0}
+.paso fieldset{border:0;padding:0;margin:0;min-width:0}
+.op{position:relative;display:flex;gap:12px;align-items:center;color:var(--text);font-size:16px;font-weight:400;min-height:58px;padding:14px 48px 14px 16px;border:1px solid var(--border);border-radius:12px;margin:0 0 10px;cursor:pointer;
+  transition:border-color 150ms ease,background-color 150ms ease,transform 160ms var(--ease-out)}
+.op:active{transform:scale(.985)}
+.op input{position:absolute;opacity:0;pointer-events:none}
+.op .radio{flex:none;width:20px;height:20px;border-radius:50%;border:1.5px solid var(--control);display:grid;place-items:center}
+.op .tecla{position:absolute;right:14px;top:50%;transform:translateY(-50%);width:24px;height:24px;border:1px solid var(--border);border-radius:6px;display:grid;place-items:center;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.op.marcada{border:2px solid var(--oro);background:color-mix(in srgb,var(--oro-claro) 12%,var(--surface));padding:13px 47px 13px 15px}
+.op.marcada .radio{border-color:var(--oro);background:var(--oro);box-shadow:inset 0 0 0 4px var(--surface)}
+.op.marcada .tecla{background:var(--oro);border-color:var(--oro);color:#fff;animation:marca 260ms var(--ease-out)}
+@keyframes marca{from{transform:translateY(-50%) scale(.6)}}
+.monto-grande{height:62px!important;font-size:26px!important;font-weight:700;letter-spacing:-.01em}
+.montos-rapidos{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0}
+.montos-rapidos button{min-height:36px;padding:6px 12px;border-radius:99px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;font-weight:600;cursor:pointer}
+.nav-pasos{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:16px}
+.nav-pasos .atras[disabled]{visibility:hidden}
+.nav-pasos .sig{min-width:160px}
+.resumen{margin:16px 0 0;padding:4px 16px}
+.resumen ol{list-style:none;margin:0;padding:0}
+.resumen li{display:grid;grid-template-columns:22px 1fr;gap:10px;padding:10px 0;border-top:1px solid var(--rule);font-size:13px;color:var(--muted)}
+.resumen li:first-child{border-top:0}
+.resumen li b{display:block;color:var(--text);font-weight:600;font-size:14px}
+.resumen .ok{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border);display:grid;place-items:center;transition:background-color 200ms ease,border-color 200ms ease}
+.resumen li.hecho .ok{background:var(--oro);border-color:var(--oro)}
+.resumen li.hecho .ok::after{content:"";width:5px;height:9px;border:solid #fff;border-width:0 2px 2px 0;transform:translateY(-1px) rotate(45deg)}
+.resumen li.ahora{color:var(--text)}
+.resumen li button{all:unset;cursor:pointer;display:block}
+
+/* ---------- Resultado ---------- */
+.rec{padding:16px;margin:14px 0}
+.rec.sel{border-left:3px solid var(--text)}
+.rec header{display:flex;flex-direction:column;gap:10px;margin-bottom:8px}
+.rec h2{display:flex;align-items:center;gap:12px;margin:0;font-size:17px}
+.medalla{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font:800 17px/1 "Bricolage Grotesque",Geist,system-ui,sans-serif;color:#2b2118;
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.18),inset 0 2px 0 rgba(255,255,255,.45);animation:medalla 420ms var(--ease-out) both}
+.medalla.m1{background:#f2c14e}.medalla.m2{background:#cfd6de}.medalla.m3{background:#e0a46e}
+.rec:nth-of-type(2) .medalla{animation-delay:80ms}.rec:nth-of-type(3) .medalla{animation-delay:160ms}
+@keyframes medalla{from{opacity:0;transform:scale(.6) rotate(-20deg)}}
+.puntaje{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.barra-puntaje{display:block;flex:1;max-width:140px;height:6px;border-radius:99px;background:var(--raised);overflow:hidden}
+.barra-puntaje::after{content:"";display:block;height:100%;width:var(--p);border-radius:inherit;background:var(--oro);animation:llenar 700ms 200ms var(--ease-out) both}
+@keyframes llenar{from{width:0}}
+.razones{margin:8px 0 0;padding-left:20px}
+.razones li{margin-bottom:6px}
+.desc{margin:6px 0 0;padding-left:20px;color:var(--muted);font-size:13px}
+.descartada{padding:14px 0;border-top:1px solid var(--border)}
+.acciones{display:flex;flex-direction:column;gap:10px;margin:22px 0 10px}
+.vacio{text-align:center;padding:36px 18px}
+.vacio .ilus{width:96px;height:96px;margin:0 auto 14px;border-radius:28px;background:color-mix(in srgb,var(--oro-claro) 18%,var(--surface));display:grid;place-items:center}
+.vacio .ilus svg{width:52px;height:52px;fill:none;stroke:var(--oro);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- Proyección ---------- */
+.proy{margin:22px 0 8px;padding:16px;min-width:0}
+.proy h2{margin:0 0 6px}
+.leyenda-lineas{display:grid;gap:4px;font-size:12.5px;color:var(--muted);margin:10px 0}
+.ln{display:inline-block;width:22px;border-top:2px solid;vertical-align:middle;margin-right:6px}
+.ln.nom{border-color:var(--hue);border-top-width:2.5px}.ln.real{border-color:var(--real)}.ln.apor{border-color:var(--data-grey);border-top-style:dashed}.ln.efec{border-color:var(--efectivo);border-top-style:dotted}
+.grafico{position:relative;margin:10px -6px;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.grafico svg{display:block;width:100%;height:auto;overflow:visible}
+.grafico .grid{stroke:var(--border);stroke-width:1}
+.grafico .eje{fill:var(--muted);font-size:11px}
+.grafico .l{fill:none;stroke-linejoin:round;stroke-linecap:round}
+.grafico .l-nom{stroke:var(--hue);stroke-width:2.5}
+.grafico .l-real{stroke:var(--real);stroke-width:2}
+.grafico .l-apor{stroke:var(--data-grey);stroke-width:2;stroke-dasharray:6 5}
+.grafico .l-efec{stroke:var(--efectivo);stroke-width:2;stroke-dasharray:2 6}
+.grafico .et{font-size:11.5px;font-weight:500}
+.et-nom{fill:var(--hue)}.et-real{fill:var(--real)}.et-apor{fill:var(--data-grey)}.et-efec{fill:var(--efectivo)}
+.grafico .cruz{stroke:var(--text);stroke-width:1;stroke-dasharray:3 3}
+.grafico .pt{stroke:var(--surface);stroke-width:2}
+.pt.nom{fill:var(--hue)}.pt.real{fill:var(--real)}.pt.apor{fill:var(--data-grey)}.pt.efec{fill:var(--efectivo)}
+.globo{position:absolute;top:0;z-index:2;transform:translateX(-50%);padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:var(--sombra);font-size:12px;line-height:1.4;white-space:nowrap;pointer-events:none;font-variant-numeric:tabular-nums}
+.globo b{display:block;font-size:12.5px;margin-bottom:2px}
+.globo span{display:flex;justify-content:space-between;gap:12px;color:var(--muted)}
+.globo span em{font-style:normal;color:var(--text);font-weight:600}
+.ajuste{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0;align-items:end}
+.ajuste .campo{margin:0}
+.ajuste .completo{grid-column:1/-1}
+.tabla-scroll{max-width:100%;overflow-x:auto;margin:0 -4px}
+.tabla{border-collapse:collapse;font-size:12.5px;margin-top:8px;min-width:100%}
+.tabla th[scope=row]{white-space:nowrap}
+.tabla th,.tabla td{padding:8px 10px;border-bottom:1px solid var(--rule);text-align:right;font-weight:400;white-space:nowrap}
+.tabla thead th{color:var(--muted);font-size:12px;white-space:normal;vertical-align:bottom}
+.tabla th:first-child,.tabla td:first-child{text-align:left}
+
+/* ---------- Movimiento ---------- */
+@keyframes subir{from{opacity:0;transform:translateY(12px)}}
+@keyframes aparecer{from{opacity:0}}
+@keyframes latido{50%{opacity:.35}}
+@keyframes latir{40%{transform:scale(1.08)}}
+.cambia-valor{animation:aparecer 300ms ease}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:1ms!important;animation-delay:0ms!important;transition-duration:1ms!important}
+  .marca3d{transform:none}
+}
+@media(min-width:720px) and (max-width:899px){
+  .pantalla{padding-inline:max(24px,calc(50vw - 340px))}
+  .mapa,.zonas{margin-inline:calc(-1 * max(24px,calc(50vw - 340px)))}
+  .zonas{padding-inline:max(24px,calc(50vw - 340px))}
+}
+.ico-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* En un computador (demo): la app se muestra dentro de un marco de teléfono, con una nota al lado. */
+.marco-info{display:none}
+@media(min-width:900px) and (min-height:680px){
+  body{background:radial-gradient(1200px 600px at 70% 20%,color-mix(in srgb,var(--cielo) 55%,var(--ground)),var(--ground))}
+  .app{inset:auto;top:50%;left:calc(50% + 150px);width:400px;height:min(860px,calc(100vh - 48px));transform:translate(-50%,-50%);border-radius:44px;overflow:hidden;
+    background:var(--ground);border:10px solid #0b0b0c;box-shadow:0 0 0 1px rgba(255,255,255,.08),0 40px 90px rgba(15,23,42,.28)}
+  .app .velo,.app .hoja{position:absolute}
+  .marco-info{display:block;position:fixed;top:50%;left:calc(50% - 470px);width:400px;transform:translateY(-50%);color:var(--text)}
+  .marco-info .marca3d{font-size:64px;color:var(--text)}
+  .marco-info p{color:var(--muted);margin:0 0 12px;font-size:15px}
+  .marco-info ul{margin:0;padding-left:18px;color:var(--muted);font-size:14px}
+  .marco-info li{margin-bottom:6px}
+}
